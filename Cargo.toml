@@ -4,8 +4,9 @@ version = "0.1.0"
 authors = ["Julian Didier <did.julian@gmail.com>"]
 license = "MIT/Apache-2.0"
 description = "SODA Test Service helps with tracking test sessions"
+repository="https://github.com/voyages-sncf-technologies/soda-test-service"
 readme = "README.md"
-keywords = ["soda", "selenium", "automation", "test"]
+keywords = ["soda", "selenium", "automation", "testing", "selenium-grid"]
 exclude = [".gitignore", ".travis.yml"]
 
 [badges]
