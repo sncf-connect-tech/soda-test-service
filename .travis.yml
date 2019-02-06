@@ -1,0 +1,27 @@
+os:
+  - linux
+language: rust
+cache: cargo
+
+# Run the script on stable, beta and nightly channels
+rust:
+  - stable
+  - beta
+  - nightly
+
+matrix:
+  allow_failures:
+    - rust: nightly
+  fast_finish: true
+
+before_script:
+  - rustup component add clippy
+  - cargo install cargo-audit
+
+script:
+  # see https://rustsec.org/
+  - cargo audit
+  # fail when encountering warnings on stable or beta
+  - cargo clippy -- -D warnings
+  # run tests
+  - cargo test
