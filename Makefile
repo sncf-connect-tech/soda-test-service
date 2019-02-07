@@ -1,7 +1,7 @@
 REGISTRY=${DOCKER_REGISTRY}
 
 TEST_SERVICE_IMAGE_NAME=soda/test-service
-TEST_SERVICE_IMAGE_VERSION=0.1.0
+TEST_SERVICE_IMAGE_VERSION=0.1.1
 
 build:
 	docker build -t soda/test-service .

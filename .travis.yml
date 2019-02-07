@@ -16,7 +16,7 @@ matrix:
 
 before_script:
   - rustup component add clippy
-  - cargo install cargo-audit
+  - cargo install --force cargo-audit
 
 script:
   # see https://rustsec.org/
