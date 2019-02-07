@@ -10,7 +10,7 @@ keywords = ["soda", "selenium", "automation", "testing", "selenium-grid"]
 exclude = [".gitignore", ".travis.yml"]
 
 [badges]
-travis-ci = { repository = "actix/actix-web", branch = "master" }
+travis-ci = { repository = "voyages-sncf-technologies/soda-test-service", branch = "master" }
 
 [dependencies]
 actix = "~0.7"
