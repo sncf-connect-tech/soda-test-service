@@ -13,7 +13,7 @@ impl Command {
   }
 
   pub fn url(self) -> String {
-    self.url.unwrap_or("".to_string())
+    self.url.unwrap_or_else(|| "".to_string())
   }
 
   pub fn deserialize(content: &str) -> Result<Command> {

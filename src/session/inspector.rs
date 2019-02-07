@@ -50,7 +50,7 @@ fn capture_create_event(chunk: &str, auth_user: String) {
 /// Capture session deletions and log
 fn capture_delete_event(path: String, auth_user: String) {
     let session_id = session_id_of_path(&path)
-        .unwrap_or("".to_string());
+        .unwrap_or_else(|| "".to_string());
 
     // user IP/ID | session status | session ID
     info!("[{}] [{}] [{}]", auth_user, SessionStatus::Deleting, session_id);
@@ -65,7 +65,7 @@ fn capture_url_event(chunk: &str, path: String, auth_user: String) {
             .unwrap_or_else(|_| Command::new());
 
         let session_id = session_id_of_path(&path)
-            .unwrap_or("".to_string());
+            .unwrap_or_else(|| "".to_string());
 
         // user IP/ID | session_status | session ID | url_command | url
         info!("[{}] [{}] [{}] [{}] [{}]",
@@ -86,7 +86,6 @@ fn capture_url_event(chunk: &str, path: String, auth_user: String) {
 /// it's a new session event that we want to capture.
 fn is_a_new_session(path: &str) -> bool {
     let splitted_path: Vec<&str> = path.split("/wd/hub/session")
-        .into_iter()
         .filter(|item| !item.is_empty())
         .collect();
 
@@ -102,7 +101,6 @@ fn session_id_of_path(path: &str) -> Option<String> {
     // /wd/hub/session/:id
     // /wd/hub/session/:id/:cmd
     let tail: Vec<&str> = path.split("/wd/hub/session")
-        .into_iter()
         .filter(|item| !item.is_empty())
         .collect();
 
@@ -112,7 +110,6 @@ fn session_id_of_path(path: &str) -> Option<String> {
     // /:id/:cmd
     if !tail.is_empty() {
         let remainder: Vec<&str> = tail[0].split('/')
-            .into_iter()
             .filter(|s| !s.is_empty())
             .collect();
 

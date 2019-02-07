@@ -70,9 +70,9 @@ fn inspect_and_stream(
 ) -> Result<ClientRequest, Error> {
     let req2 = req.clone(); // we need to extend the lifetime of req
 
-    match req.method() {
-        &Method::GET => client_builder.finish(), // <- Get requests have an empty body
-        &Method::DELETE => { // <- Delete requests have an empty body
+    match *req.method() {
+        Method::GET => client_builder.finish(), // <- Get requests have an empty body
+        Method::DELETE => { // <- Delete requests have an empty body
             session::inspect(&req2, Bytes::from(&b""[..]));
 
             client_builder.finish()
