@@ -1,12 +1,12 @@
+use crate::domain::AppState;
+use crate::session;
 use actix_web::{
-    client::ClientRequestBuilder, client::ClientRequest, client::ClientResponse,
-    http, AsyncResponder, Error, HttpMessage, HttpRequest, HttpResponse, http::Method
+    client::ClientRequest, client::ClientRequestBuilder, client::ClientResponse, http,
+    http::Method, AsyncResponder, Error, HttpMessage, HttpRequest, HttpResponse,
 };
+use bytes::Bytes;
 use futures::{future, Future, Stream};
 use std::time::Duration;
-use domain::AppState;
-use bytes::Bytes;
-use session;
 
 pub fn forward(req: &HttpRequest<AppState>) -> Box<Future<Item = HttpResponse, Error = Error>> {
     let mut new_url = req.state().forward_url.clone();
@@ -47,13 +47,9 @@ pub fn forward(req: &HttpRequest<AppState>) -> Box<Future<Item = HttpResponse, E
         .responder()
 }
 
-fn construct_response(
-    resp: ClientResponse,
-) -> Box<dyn Future<Item = HttpResponse, Error = Error>> {
+fn construct_response(resp: ClientResponse) -> Box<dyn Future<Item = HttpResponse, Error = Error>> {
     let mut client_resp = HttpResponse::build(resp.status());
-    for (header_name, header_value) in
-        resp.headers().iter().filter(|(h, _)| *h != "connection")
-    {
+    for (header_name, header_value) in resp.headers().iter().filter(|(h, _)| *h != "connection") {
         client_resp.header(header_name.clone(), header_value.clone());
     }
 
@@ -66,20 +62,22 @@ fn construct_response(
 /// information about the current test session.
 fn inspect_and_stream(
     req: &HttpRequest<AppState>,
-    client_builder: &mut ClientRequestBuilder
+    client_builder: &mut ClientRequestBuilder,
 ) -> Result<ClientRequest, Error> {
     let req2 = req.clone(); // we need to extend the lifetime of req
 
     match *req.method() {
-        Method::GET => client_builder.finish(), // <- Get requests have an empty body
-        Method::DELETE => { // <- Delete requests have an empty body
+        // Finish the requests with an empty body
+        Method::GET => client_builder.finish(),
+        Method::DELETE => {
             session::inspect(&req2, Bytes::from(&b""[..]));
-
             client_builder.finish()
-        },
-        _ => { // In all the other cases we inspect and stream the body
-            client_builder.streaming(req.payload()
-                .map(move |chunk| session::inspect(&req2, chunk))
+        }
+        _ => {
+            // In all the other cases we inspect and stream the body
+            client_builder.streaming(
+                req.payload()
+                    .map(move |chunk| session::inspect(&req2, chunk)),
             )
         }
     }

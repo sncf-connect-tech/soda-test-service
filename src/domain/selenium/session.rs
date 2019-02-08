@@ -10,7 +10,7 @@ pub enum SessionStatus {
 #[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Session {
-  session_id: String
+  session_id: String,
 }
 
 impl fmt::Display for SessionStatus {

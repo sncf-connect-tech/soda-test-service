@@ -2,13 +2,13 @@ use serde_json::{self, Result};
 
 #[derive(Debug, Default, Deserialize)]
 pub struct Command {
-  url: Option<String>
+  url: Option<String>,
 }
 
 impl Command {
   pub fn new() -> Command {
     Command {
-      url: Some("".to_string())
+      url: Some("".to_string()),
     }
   }
 
