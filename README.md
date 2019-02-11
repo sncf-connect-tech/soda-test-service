@@ -7,6 +7,8 @@ The test service is a microservice belonging to the project Selenium On Demand A
 * Correlate test session failures to specific OS / browers
 * Follow the test sessions in realtime
 
+![Demo with a test session](doc/img/session-logs.gif)
+
 # Getting Started
 These instructions will get you a minimal Selenium Grid with :
 * A Selenium hub
@@ -51,7 +53,7 @@ Finally use the Selenium hub through the test-service : `http://<AUTH_USER>:<AUT
 ## Prerequisites
 - [Install rust](https://www.rust-lang.org/tools/install)
 
->Pro tip : when you're developing, always use `cargo check` to avoid long build times.
+>Pro tip : when you're developing, always use [`cargo check`](https://rust-lang-nursery.github.io/edition-guide/rust-2018/cargo-and-crates-io/cargo-check-for-faster-checking.html) to avoid long build times.
 Then, when you are ready to test your work, use `cargo run` which will build a non-optimized binary and launch it.
 
 ## Launch the Selenium grid behind the test service
@@ -74,6 +76,6 @@ This project is licensed under either of
 at your option.
 
 ## Contribution
-Your contribution is welcome! You can found more information in the [CONTRIBUTING.md](CONTRIBUTING.md).
+Your contribution is welcome! You can find more information in the [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you shall be dual licensed as above, without any additional terms or conditions.

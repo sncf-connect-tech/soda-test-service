@@ -3,7 +3,7 @@ use url::Url;
 pub struct AppState {
     pub forward_url: Url,
     pub auth_user: String,
-    pub auth_pwd: String
+    pub auth_pwd: String,
 }
 
 impl AppState {
@@ -11,7 +11,7 @@ impl AppState {
         AppState {
             forward_url,
             auth_user,
-            auth_pwd
+            auth_pwd,
         }
     }
 }

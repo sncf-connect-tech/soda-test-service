@@ -1,21 +1,11 @@
-extern crate actix;
-extern crate actix_web;
-extern crate actix_web_httpauth;
-extern crate clap;
-extern crate env_logger;
-extern crate failure;
-extern crate futures;
-extern crate url;
-#[macro_use]
-extern crate log;
-extern crate bytes;
-extern crate serde_json;
-extern crate uuid;
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate log;
 
 use actix_web::{http::Method, middleware::Logger, server, App, HttpResponse};
 use clap::value_t;
+use env_logger;
 use std::env;
 use std::net::ToSocketAddrs;
 use url::Url;
