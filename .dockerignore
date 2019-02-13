@@ -1,2 +1,3 @@
 *
-!target/release/soda_test_service
+!src
+!Cargo.*
