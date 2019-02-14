@@ -8,17 +8,23 @@ pub struct Auth;
 
 impl Middleware<AppState> for Auth {
     fn start(&self, req: &HttpRequest<AppState>) -> Result<Started> {
-        // The credentials are verified and configured in the main function.
+        // The credentials are verified and configured in the main.
         let auth_user = &req.state().auth_user;
         let auth_pwd = &req.state().auth_pwd;
+
+        // If the username is empty, we consider that the test service has
+        // been configured to run without the Basic-Auth.
+        if auth_user.is_empty() {
+            return Ok(Started::Done);
+        }
 
         // The realm configuration.
         let mut config = Config::default();
         config.realm("SODA Test Service");
 
-        // Check auth information.
         let auth = BasicAuth::from_request(&req, &config)?;
 
+        // Check auth information.
         if auth.username() == auth_user && auth.password() == Some(&auth_pwd) {
             Ok(Started::Done)
         } else {
