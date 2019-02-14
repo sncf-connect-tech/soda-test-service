@@ -4,7 +4,7 @@ TEST_SERVICE_IMAGE_NAME=soda/test-service
 TEST_SERVICE_IMAGE_VERSION=0.1.1
 
 build:
-	docker build -t soda/test-service .
+	docker build -t $(TEST_SERVICE_IMAGE_NAME) .
 
 tag: build
 	docker tag $(TEST_SERVICE_IMAGE_NAME) $(REGISTRY)/$(TEST_SERVICE_IMAGE_NAME):$(TEST_SERVICE_IMAGE_VERSION)
