@@ -20,11 +20,10 @@ fn main() {
     std::env::set_var("RUST_LOG", "info");
     env_logger::init();
 
-    // Check if the default username and the the default
-    // password are set. Temporary solution before the
-    // hot reload one with a database.
-    let auth_user = env::var("AUTH_USER").expect("AUTH_USER must be set");
-    let auth_pwd = env::var("AUTH_PWD").expect("AUTH_PWD must be set");
+    // The environment variables used for the Basic-Auth.
+    // In the future it will be replaced by a database for the hot reload.
+    let auth_user = env::var("AUTH_USER").unwrap_or_else(|_| "".to_string());
+    let auth_pwd = env::var("AUTH_PWD").unwrap_or_else(|_| "".to_string());
 
     // Start the parsing of arguments.
     let matches = cli::init();
@@ -60,11 +59,13 @@ fn main() {
 
         App::with_state(state)
             .middleware(Logger::default())
-            .middleware(middlewares::Auth)
             .resource("/healthcheck", |r| {
-                r.method(Method::GET).f(|_| HttpResponse::Ok().finish())
+                r.method(Method::GET).f(|_| HttpResponse::Ok())
             })
-            .default_resource(|r| r.f(proxy::forward))
+            .default_resource(|r| {
+                r.middleware(middlewares::Auth);
+                r.f(proxy::forward)
+            })
     })
     .bind((listen_addr, listen_port))
     .expect("Cannot bind listening port")
