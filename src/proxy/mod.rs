@@ -17,7 +17,7 @@ pub fn forward(req: &HttpRequest<AppState>) -> Box<Future<Item = HttpResponse, E
     client_builder
         .no_default_headers()
         .uri(new_url)
-        .timeout(Duration::from_secs(60)); // <- the max timeout we allow for Selenium commands
+        .timeout(Duration::from_secs(300)); // <- the max timeout we allow for Selenium commands
 
     // inspect the http request and then process
     let mut client_request = inspect_and_stream(&req, &mut client_builder).unwrap();
