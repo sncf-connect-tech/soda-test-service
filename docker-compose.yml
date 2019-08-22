@@ -1,4 +1,4 @@
-version: '2'
+version: "2"
 services:
   chrome:
     image: selenium/node-chrome:3.3
@@ -34,7 +34,7 @@ services:
       - local-network
 
   test-service:
-    image: soda/test-service:0.1.1
+    image: soda/test-service:0.1.2
     ports:
       - "8080:8080"
     environment:
