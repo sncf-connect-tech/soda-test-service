@@ -1,6 +1,6 @@
 # Inspired by https://whitfin.io/speeding-up-rust-docker-builds/
 # Step 1 : build the optimized binary
-FROM rust:1.32-slim as build
+FROM rust:1.37-slim as build
 
 # create a new empty shell project
 RUN USER=root cargo new --bin soda-test-service
