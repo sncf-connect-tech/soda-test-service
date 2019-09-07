@@ -1,6 +1,6 @@
 # Inspired by https://whitfin.io/speeding-up-rust-docker-builds/
 # Step 1 : build the optimized binary
-FROM rust:1.32-slim as build
+FROM rust:1.37-slim as build
 
 # create a new empty shell project
 RUN USER=root cargo new --bin soda-test-service
@@ -32,4 +32,4 @@ EXPOSE 8080
 # This command run the test service which listen on the specified address:port
 # and forward http requests to the specified address:port.
 # Arguments are : LISTEN ADDR, LISTEN PORT, FWD ADDR, FWD PORT
-CMD ./soda-test-service 0.0.0.0 8080 $HUB_PORT_4444_TCP_ADDR $HUB_PORT_4444_TCP_PORT
+CMD ./soda-test-service --listen=0.0.0.0:8080 --forward=$HUB_PORT_4444_TCP_ADDR:$HUB_PORT_4444_TCP_PORT

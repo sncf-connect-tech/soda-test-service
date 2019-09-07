@@ -2,22 +2,26 @@
 
 The test service is a microservice belonging to the project Selenium On Demand Acronym. It acts like a reverse proxy in front of your Selenium hub. The test service is useful to :
 
-* Identify users with a Basic-Auth
-* Get some insights on test sessions (teams, browers, os)
-* Correlate test session failures to specific OS / browers
-* Follow the test sessions in realtime
+- Identify users with a Basic-Auth
+- Get some insights on test sessions (teams, browers, os)
+- Correlate test session failures to specific OS / browers
+- Follow the test sessions in realtime
 
 ![Demo with a test session](doc/img/session-logs.gif)
 
 # Getting Started
+
 These instructions will get you a minimal Selenium Grid with :
-* A Selenium hub
-* A test-service in front of your hub
-* A Selenium node Chrome (Linux)
-* A Selenium node Firefox (Linux)
+
+- A Selenium hub
+- A test-service in front of your hub
+- A Selenium node Chrome (Linux)
+- A Selenium node Firefox (Linux)
 
 ## Docker compose
+
 ### By using our [docker-compose.yml](docker-compose.yml)
+
 - `AUTH_USER=user AUTH_PWD=pwd docker-compose up -d`
 - [http://user:pwd@localhost:8080](http://user:pwd@localhost:8080)
 
@@ -42,6 +46,7 @@ test-service:
 ```
 
 Then run your services with the following docker-compose command :
+
 ```
 # Equivalent to docker-compose up -d test-service hub chrome firefox
 docker-compose up -d
@@ -50,11 +55,13 @@ docker-compose up -d
 Finally use the Selenium hub through the test-service : `http://<AUTH_USER>:<AUTH_PWD>@localhost:8080`
 
 # Development
+
 ## Prerequisites
+
 - [Install rust](https://www.rust-lang.org/tools/install)
 
->Pro tip : when you're developing, always use [`cargo check`](https://rust-lang-nursery.github.io/edition-guide/rust-2018/cargo-and-crates-io/cargo-check-for-faster-checking.html) to avoid long build times.
-Then, when you are ready to test your work, use `cargo run` which will build a non-optimized binary and launch it.
+> Pro tip : when you're developing, always use [`cargo check`](https://rust-lang-nursery.github.io/edition-guide/rust-2018/cargo-and-crates-io/cargo-check-for-faster-checking.html) to avoid long build times.
+> Then, when you are ready to test your work, use `cargo run` which will build a non-optimized binary and launch it.
 
 ## Launch the Selenium grid behind the test service
 
@@ -63,11 +70,12 @@ Then, when you are ready to test your work, use `cargo run` which will build a n
 docker-compose up -d hub chrome firefox
 
 # Launch the test service on localhost:8080 and forward requests to the hub
-# Arguments : <LISTEN ADDR> <LISTEN PORT> <FWD ADDR> <FWD PORT>
-AUTH_USER=user AUTH_PWD=pwd cargo run localhost 8080 localhost 4444
+# Arguments : <LISTEN ADDR>:<LISTEN PORT> <FWD ADDR>:<FWD PORT>
+./soda-test-service.exe --listen=localhost:8080 --forward=localhost:4444
 ```
 
 # License
+
 This project is licensed under either of
 
 - Apache license, version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0))
@@ -76,6 +84,7 @@ This project is licensed under either of
 at your option.
 
 ## Contribution
+
 Your contribution is welcome! You can find more information in the [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you shall be dual licensed as above, without any additional terms or conditions.
