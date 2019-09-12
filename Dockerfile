@@ -32,4 +32,4 @@ EXPOSE 8080
 # This command run the test service which listen on the specified address:port
 # and forward http requests to the specified address:port.
 # Arguments are : LISTEN ADDR, LISTEN PORT, FWD ADDR, FWD PORT
-CMD ./soda-test-service --listen=0.0.0.0:8080 --forward=$HUB_PORT_4444_TCP_ADDR:$HUB_PORT_4444_TCP_PORT
+CMD ./soda-test-service --listen=0.0.0.0:8080 --forward=$HUB_PORT_4444_TCP_ADDR:$HUB_PORT_4444_TCP_PORT --timeout=$HUB_CLIENT_TIMEOUT
