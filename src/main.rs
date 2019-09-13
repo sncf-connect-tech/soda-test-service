@@ -2,6 +2,8 @@
 extern crate serde_derive;
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate clap;
 
 use actix_web::{http::Method, middleware::Logger, server, App, HttpResponse};
 use env_logger;
@@ -31,6 +33,9 @@ fn main() {
   let listen = matches.value_of("listen").unwrap();
   let forwarded = matches.value_of("forward").unwrap();
 
+  // Configure the timeout for the proxy, default to 60s
+  let timeout = value_t!(matches, "timeout", u32).unwrap_or(60);
+
   // Verify and build the forward URL.
   let forward_url = Url::parse(&format!(
     "http://{}",
@@ -47,7 +52,12 @@ fn main() {
   // The server spawns a number of workers equals to the number of logical CPU cores,
   // each in its own thread.
   server::new(move || {
-    let state = domain::AppState::init(forward_url.clone(), auth_user.clone(), auth_pwd.clone());
+    let state = domain::AppState::init(
+      forward_url.clone(),
+      auth_user.clone(),
+      auth_pwd.clone(),
+      timeout,
+    );
 
     App::with_state(state)
       .middleware(Logger::default())

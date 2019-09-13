@@ -69,9 +69,9 @@ Finally use the Selenium hub through the test-service : `http://<AUTH_USER>:<AUT
 # Launch the Selenium hub with chrome and firefox on localhost:4444
 docker-compose up -d hub chrome firefox
 
-# Launch the test service on localhost:8080 and forward requests to the hub
-# Arguments : <LISTEN ADDR>:<LISTEN PORT> <FWD ADDR>:<FWD PORT>
-./soda-test-service.exe --listen=localhost:8080 --forward=localhost:4444
+# Launch the test service on localhost:8080 and forward requests to the hub, a default client timeout is set to 60s
+# Arguments : <LISTEN ADDR>:<LISTEN PORT> <FWD ADDR>:<FWD PORT> <DURATION_IN_SECS>
+./soda-test-service.exe --listen=localhost:8080 --forward=localhost:4444 --timeout=300
 ```
 
 # License

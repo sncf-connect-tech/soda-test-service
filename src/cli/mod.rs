@@ -25,5 +25,12 @@ pub fn init<'a>() -> ArgMatches<'a> {
         .validator(validate_format)
         .required(true),
     )
+    .arg(
+      Arg::with_name("timeout")
+        .long("timeout")
+        .help("format : DURATION_IN_SECS")
+        .takes_value(true)
+        .required(true),
+    )
     .get_matches()
 }
