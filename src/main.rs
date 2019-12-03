@@ -33,6 +33,7 @@ fn main() {
   let listen = matches.value_of("listen").unwrap();
   let forwarded = matches.value_of("forward").unwrap();
 
+
   // Configure the timeout for the proxy, default to 60s
   let timeout = value_t!(matches, "timeout", u32).unwrap_or(60);
 

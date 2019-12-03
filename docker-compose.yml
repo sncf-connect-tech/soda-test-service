@@ -40,8 +40,8 @@ services:
     environment:
       - HUB_PORT_4444_TCP_ADDR=hub
       - HUB_PORT_4444_TCP_PORT=4444
-      - AUTH_USER=${AUTH_USER}
-      - AUTH_PWD=${AUTH_PWD}
+      - AUTH_USER=amaury_hery
+      - AUTH_PWD=Fiat1995
       - HUB_CLIENT_TIMEOUT=300
     networks:
       - local-network

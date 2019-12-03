@@ -12,6 +12,7 @@ pub struct Capabilities {
 pub struct DesiredCapabilities {
   browser_name: Option<String>,
   platform: Option<String>,
+  sodaUser: Option<String>,
 }
 
 impl Capabilities {
@@ -31,6 +32,7 @@ impl DesiredCapabilities {
     DesiredCapabilities {
       browser_name: Some("".to_string()),
       platform: Some("".to_string()),
+      sodaUser: Some("".to_string()),
     }
   }
 
@@ -47,18 +49,26 @@ impl DesiredCapabilities {
       None => "".to_string(),
     }
   }
+
+  pub fn get_soda_user(&self) -> String {
+    match &self.sodaUser {
+      Some(sodaUser) => sodaUser.to_string(),
+      None => "".to_string(),
+    }
+  }
 }
 
 impl fmt::Display for DesiredCapabilities {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(
       f,
-      "browser:{}, platform:{}",
+      "browser:{}, platform:{}, sodaUser:{}",
       self
         .browser_name
         .to_owned()
         .unwrap_or_else(|| "".to_string()),
-      self.platform.to_owned().unwrap_or_else(|| "".to_string())
+      self.platform.to_owned().unwrap_or_else(|| "".to_string()),
+      self.sodaUser.to_owned().unwrap_or_else(|| "".to_string())
     )
   }
 }

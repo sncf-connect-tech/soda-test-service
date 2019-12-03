@@ -10,24 +10,23 @@ use bytes::Bytes;
 pub fn inspect(req: &HttpRequest<AppState>, chunk: Bytes) -> Bytes {
     let method = req.method().to_string();
     let path = req.uri().to_string();
-    let auth_user = req.state().auth_user.clone();
 
     // bytes to string for deserialization
     let chunk_str = std::str::from_utf8(&chunk).unwrap_or(&"").to_owned();
 
     if method == "DELETE" {
-        capture_delete_event(path, auth_user);
+        capture_delete_event(path);
     } else if method == "POST" && is_a_new_session(&path) {
-        capture_create_event(&chunk_str, auth_user);
+        capture_create_event(&chunk_str);
     } else if method == "POST" && !is_a_new_session(&path) {
-        capture_url_event(&chunk_str, path, auth_user);
+        capture_url_event(&chunk_str, path);
     }
 
     chunk
 }
 
 /// Capture new sessions and log
-fn capture_create_event(chunk: &str, auth_user: String) {
+fn capture_create_event(chunk: &str) {
     let caps = Capabilities::deserialize(chunk).unwrap_or_else(|_| {
         error!(
             "Fail to deserialize the capabilities for the given chunk : {}",
@@ -38,31 +37,30 @@ fn capture_create_event(chunk: &str, auth_user: String) {
 
     let desired_caps = caps.desired_capabilities;
 
-    // user IP/ID | session status | Platform | Browser
+    // user IP/ID | session status | Platform | Browser | Soda_User
     info!(
         "[{}] [{}] [{}] [{}]",
-        auth_user,
         SessionStatus::Creating,
         desired_caps.get_platform(),
-        desired_caps.get_browser_name()
+        desired_caps.get_browser_name(),
+        desired_caps.get_soda_user(),
     );
 }
 
 /// Capture session deletions and log
-fn capture_delete_event(path: String, auth_user: String) {
+fn capture_delete_event(path: String) {
     let session_id = session_id_of_path(&path).unwrap_or_else(|| "".to_string());
 
     // user IP/ID | session status | session ID
     info!(
-        "[{}] [{}] [{}]",
-        auth_user,
+        "[{}] [{}]",
         SessionStatus::Deleting,
         session_id
     );
 }
 
 /// Capture asked urls from test sessions and log
-fn capture_url_event(chunk: &str, path: String, auth_user: String) {
+fn capture_url_event(chunk: &str, path: String) {
     if path.contains("/url") {
         // deserialize the command from the request's body
         // or return a new command with an empty url
@@ -72,8 +70,7 @@ fn capture_url_event(chunk: &str, path: String, auth_user: String) {
 
         // user IP/ID | session_status | session ID | url_command | url
         info!(
-            "[{}] [{}] [{}] [{}] [{}]",
-            auth_user,
+            "[{}] [{}] [{}] [{}]",
             SessionStatus::RunCommand,
             session_id,
             "url",
