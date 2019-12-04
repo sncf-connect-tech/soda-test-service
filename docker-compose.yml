@@ -39,9 +39,7 @@ services:
       - "8080:8080"
     environment:
       - HUB_PORT_4444_TCP_ADDR=hub
-      - HUB_PORT_4444_TCP_PORT=4444
-      - AUTH_USER=amaury_hery
-      - AUTH_PWD=Fiat1995
+      - HUB_PORT_4444_TCP_PORT=4444  
       - HUB_CLIENT_TIMEOUT=300
     networks:
       - local-network

@@ -26,6 +26,14 @@ pub fn init<'a>() -> ArgMatches<'a> {
         .required(true),
     )
     .arg(
+      Arg::with_name("default_logs")
+        .long("default_logs")
+        .help("format:bool")
+        .takes_value(true)
+        .validator(validate_format)
+        .required(true),
+    )
+    .arg(
       Arg::with_name("timeout")
         .long("timeout")
         .help("format : DURATION_IN_SECS")
