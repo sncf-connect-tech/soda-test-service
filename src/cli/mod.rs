@@ -26,12 +26,13 @@ pub fn init<'a>() -> ArgMatches<'a> {
         .required(true),
     )
     .arg(
-      Arg::with_name("default_logs")
-        .long("default_logs")
-        .help("format:bool")
-        .takes_value(true)
-        .validator(validate_format)
-        .required(true),
+      Arg::with_name("verbose")
+        .short("-v")
+        .long("verbose")
+        .multiple(true)
+        .help("if you submit [--verbose] you can pin up the logs with all informations, else only that you have configure")
+        .takes_value(false)
+        .required(false),
     )
     .arg(
       Arg::with_name("timeout")

@@ -32,11 +32,10 @@ fn main() {
   // Configure addresses to listen and forward.
   let listen = matches.value_of("listen").unwrap();
   let forwarded = matches.value_of("forward").unwrap();
-
+  
   //configure types of logs (default or personnal)
-  let bool::default_logs = matches.value_of("default_values").unwrap();
-
-
+  let verbose = matches.occurrences_of("verbose");
+  
   // Configure the timeout for the proxy, default to 60s
   let timeout = value_t!(matches, "timeout", u32).unwrap_or(60);
 
@@ -62,29 +61,20 @@ fn main() {
       auth_pwd.clone(),
       timeout,
     );
-
+        
     let mut app = App::with_state(state);
 
-    if (default_logs){
-      app
-        .middleware(Logger::default())
-        .resource("/healthcheck", |r| {
-          r.method(Method::GET).f(|_| HttpResponse::Ok())
-        })
-        .default_resource(|r| {
-          r.middleware(middlewares::Auth);
-          r.f(proxy::forward)
-        })
-    }else {
-      app
-        .resource("/healthcheck", |r| {
-          r.method(Method::GET).f(|_| HttpResponse::Ok())
-        })
-        .default_resource(|r| {
-          r.middleware(middlewares::Auth);
-          r.f(proxy::forward)
-        })
-    }    
+    if verbose > 0 {
+      app = app.middleware(Logger::default());
+    }
+
+    app.resource("/healthcheck", |r| {
+      r.method(Method::GET).f(|_| HttpResponse::Ok())
+    })
+    .default_resource(|r| {
+      r.middleware(middlewares::Auth);
+      r.f(proxy::forward)
+    })
   })
   .bind(listen)
   .expect("Cannot bind listening port")

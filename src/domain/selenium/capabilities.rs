@@ -13,7 +13,8 @@ pub struct Capabilities {
 pub struct DesiredCapabilities {
   browser_name: Option<String>,
   platform: Option<String>,
-  user: Option<String>,
+  #[serde(rename(deserialize = "soda:user"))]
+  soda_user: Option<String>,
 }
 
 impl Capabilities {
@@ -33,7 +34,7 @@ impl DesiredCapabilities {
     DesiredCapabilities {
       browser_name: Some("".to_string()),
       platform: Some("".to_string()),
-      user: Some("".to_string()),
+      soda_user: Some("".to_string()),
     }
   }
 
@@ -51,9 +52,9 @@ impl DesiredCapabilities {
     }
   }
 
-  pub fn get_user(&self) -> String {
-    match &self.user {
-      Some(user) => user.to_string(),
+  pub fn get_soda_user(&self) -> String {
+    match &self.soda_user {
+      Some(soda_user) => soda_user.to_string(),
       None => "".to_string(),
     }
   }
@@ -63,13 +64,13 @@ impl fmt::Display for DesiredCapabilities {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(
       f,
-      "browser:{}, platform:{}, user:{}",
+      "browser:{}, platform:{}, soda:user:{}",
       self
         .browser_name
         .to_owned()
         .unwrap_or_else(|| "".to_string()),
       self.platform.to_owned().unwrap_or_else(|| "".to_string()),
-      self.user.to_owned().unwrap_or_else(|| "".to_string())
+      self.soda_user.to_owned().unwrap_or_else(|| "".to_string())
     )
   }
 }
