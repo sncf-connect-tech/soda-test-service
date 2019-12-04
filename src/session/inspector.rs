@@ -43,7 +43,7 @@ fn capture_create_event(chunk: &str) {
         SessionStatus::Creating,
         desired_caps.get_platform(),
         desired_caps.get_browser_name(),
-        desired_caps.get_user(),
+        desired_caps.get_soda_user(),
     );
 }
 
