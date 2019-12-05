@@ -6,7 +6,6 @@ use bytes::Bytes;
 
 
 /// Inspect the given chunk from a request's payload.
-///
 /// This function retrieve the method and the path from the request
 /// to know which event to match.
 pub fn inspect(req: &HttpRequest<AppState>, chunk: Bytes) -> Bytes {
