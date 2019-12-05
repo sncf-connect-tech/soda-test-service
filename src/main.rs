@@ -16,6 +16,8 @@ mod domain;
 mod middlewares;
 mod proxy;
 mod session;
+mod bdd;
+
 
 fn main() {
   std::env::set_var("RUST_LOG", "info");
