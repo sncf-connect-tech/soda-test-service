@@ -18,7 +18,7 @@ pub fn inspect(req: &HttpRequest<AppState>, chunk: Bytes) -> Bytes {
     if method == "DELETE" {
         capture_delete_event(path);
     } else if method == "POST" && is_a_new_session(&path) {
-        capture_create_event(&chunk_str,path);
+        capture_create_event(&chunk_str);
     } else if method == "POST" && !is_a_new_session(&path) {
         capture_url_event(&chunk_str, path);
     }
@@ -27,7 +27,7 @@ pub fn inspect(req: &HttpRequest<AppState>, chunk: Bytes) -> Bytes {
 }
 
 /// Capture new sessions and log
-fn capture_create_event(chunk: &str,path: String) {
+fn capture_create_event(chunk: &str) {
     let caps = Capabilities::deserialize(chunk).unwrap_or_else(|_| {
         error!(
             "Fail to deserialize the capabilities for the given chunk : {}",
@@ -38,13 +38,6 @@ fn capture_create_event(chunk: &str,path: String) {
 
     let desired_caps = caps.desired_capabilities;
 
-    let user = desired_caps.get_soda_user();
-  // insert soda_user in the redis bbd with the function in  module bdd/redis
-    let session_id = session_id_of_path(&path).unwrap_or_else(|| "".to_string());
-    
-    info!("[{}]",session_id);
-
-    redis::insert_user(user, session_id); //
     // user IP/ID | session status | Platform | Browser | Soda_User
     info!(
         "[{}] [{}] [{}] [{}]",
@@ -75,6 +68,20 @@ fn capture_url_event(chunk: &str, path: String) {
         let command = Command::deserialize(chunk).unwrap_or_else(|_| Command::new());
 
         let session_id = session_id_of_path(&path).unwrap_or_else(|| "".to_string());
+
+        let caps = Capabilities::deserialize(chunk).unwrap_or_else(|_| {
+            error!(
+                "Fail to deserialize the capabilities for the given chunk : {}",
+                chunk
+            );
+            Capabilities::new()
+        });
+    
+        let desired_caps = caps.desired_capabilities;
+    
+        let user = desired_caps.get_soda_user();
+    
+        redis::insert_user_and_session(user, &session_id);
         // user IP/ID | session_status | session ID | url_command | url
         info!(
             "[{}] [{}] [{}] [{}]",

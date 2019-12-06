@@ -30,4 +30,5 @@ serde_derive = "^1.0.71"
 serde_json = "^1.0.8"
 uuid = { version="^0.6.5", features = ["v4"] }
 redis = "0.13.0"
+hash = "0.3.0"
 

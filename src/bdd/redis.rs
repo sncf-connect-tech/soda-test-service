@@ -1,7 +1,14 @@
 extern crate redis;
 use redis::{Client,Commands};
+use std::collections::HashMap;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
-// pub fn connexion() -> redis::Connection {  function to create a client and a connexion
+
+
+
+// function to create a client and a connexion
+// pub fn connexion() -> redis::Connection {  
 
 // let client = Client::open("redis://127.0.0.1:6379/").unwrap();
 // let conn = client.get_connection().unwrap();
@@ -9,30 +16,20 @@ use redis::{Client,Commands};
 
 // }
 
+  pub fn hash() {
+      let user ="TEAM TAPASS";
+      let id_session = "58816e6f-0afc-43dd-8899-67fa05db895b";
+      let mut hasher = DefaultHasher::new();
+      user.hash(&mut hasher);
+      id_session.hash(&mut hasher);
+      println!("Hash is {:x}!", hasher.finish());
 
-// pub fn pub_sub(mut conn: redis::Connection){ // function pub/sub redis
+  }
 
-//     let mut pubsub = conn.as_pubsub();
-//     pubsub.subscribe("channel_1").unwrap();
-//     pubsub.subscribe("channel_2").unwrap();
 
-//     loop {
-//         let msg = pubsub.get_message().unwrap();
-//         let payload : String = msg.get_payload().unwrap();
-//         println!("channel '{}': {}", msg.get_channel_name(), payload);
-//         break;
-
-// }
-// }
-
-  pub fn insert_user(user : String, id_session : String){
+  pub fn insert_user_and_session(user : String, id_session: &str) {
    
-    let client = Client::open("redis://127.0.0.1:6379/").unwrap();
-    let mut conn = client.get_connection().unwrap();
-    let _: () = conn.set("user",user) .unwrap();
-    let _: () = conn.set("id_session",id_session) .unwrap();
-    let answer: String = conn.get("user").unwrap();
-    let answer2: String = conn.get("id_session").unwrap();
-    println!("USER: {}", answer);
-    println!("ID_SESSION : {}",answer2);
+    let client = redis::Client::open("redis://127.0.0.1:6379/").unwrap();
+    let mut con = client.get_connection().unwrap();
+    redis::cmd("HSET").arg(user).arg("session").arg(id_session).execute(&mut con);
   }
