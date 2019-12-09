@@ -23,7 +23,6 @@ use std::hash::{Hash, Hasher};
       user.hash(&mut hasher);
       id_session.hash(&mut hasher);
       println!("Hash is {:x}!", hasher.finish());
-
   }
 
 
@@ -32,4 +31,13 @@ use std::hash::{Hash, Hasher};
     let client = redis::Client::open("redis://127.0.0.1:6379/").unwrap();
     let mut con = client.get_connection().unwrap();
     redis::cmd("HSET").arg(user).arg("session").arg(id_session).execute(&mut con);
+    println!("Enregistrer en BDD");
+  }
+
+  pub fn get_user(user : String) -> String{
+    return user;
+  } 
+
+  pub fn get_session (id_session : &str)-> &str{
+    return id_session;
   }

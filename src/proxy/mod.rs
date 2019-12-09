@@ -1,5 +1,7 @@
 use crate::domain::AppState;
+use crate::session::inspector;
 use crate::session;
+use crate::domain::selenium::Capabilities;
 use actix_web::{
   client::ClientRequest, client::ClientRequestBuilder, client::ClientResponse, http, http::Method,
   AsyncResponder, Error, HttpMessage, HttpRequest, HttpResponse,
@@ -12,7 +14,7 @@ pub fn forward(req: &HttpRequest<AppState>) -> Box<dyn Future<Item = HttpRespons
   let mut new_url = req.state().forward_url.clone();
   new_url.set_path(req.uri().path());
   new_url.set_query(req.uri().query());
-
+  // debug!("le path user est {:?}",req.uri().path());
   let mut client_builder = ClientRequest::build_from(req);
   client_builder
     .no_default_headers()
@@ -20,7 +22,24 @@ pub fn forward(req: &HttpRequest<AppState>) -> Box<dyn Future<Item = HttpRespons
     .timeout(Duration::from_secs(req.state().timeout.into())); // <- the max timeout we allow for Selenium commands
 
   // inspect the http request and then process
+
+  
+
+ 
+
   let mut client_request = inspect_and_stream(&req, &mut client_builder).unwrap();
+
+  let is_new_session = inspector::is_a_new_session(req.uri().path());
+
+  let request = req.body();
+  
+  if is_new_session{
+
+
+  }
+
+
+
 
   if let Some(addr) = req.peer_addr() {
     match client_request.headers_mut().entry("x-forwarded-for") {
