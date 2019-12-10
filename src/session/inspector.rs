@@ -10,7 +10,8 @@ use bytes::Bytes;
 pub fn inspect(req: &HttpRequest<AppState>, chunk: Bytes) -> Bytes {
     let method = req.method().to_string();
     let path = req.uri().to_string();
-
+    let auth_user = req.state().auth_user.clone();
+    
     // bytes to string for deserialization
     let chunk_str = std::str::from_utf8(&chunk).unwrap_or(&"").to_owned();
 
@@ -37,13 +38,10 @@ fn capture_create_event(chunk: &str) {
 
     let desired_caps = caps.desired_capabilities;
 
-    // user IP/ID | session status | Platform | Browser | Soda_User
+    // user IP/ID | session status | Platform | Browser
     info!(
-        "[{}] [{}] [{}] [{}]",
-        SessionStatus::Creating,
-        desired_caps.get_platform(),
-        desired_caps.get_browser_name(),
-        desired_caps.get_soda_user(),
+        "[{}] {}",
+        SessionStatus::Creating, desired_caps
     );
 }
 

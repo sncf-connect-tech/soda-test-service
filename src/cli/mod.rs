@@ -30,7 +30,7 @@ pub fn init<'a>() -> ArgMatches<'a> {
         .short("-v")
         .long("verbose")
         .multiple(true)
-        .help("if you submit [--verbose] you can pin up the logs with all informations, else only that you have configure")
+        .help("Make the server more talkative")
         .takes_value(false)
         .required(false),
     )
