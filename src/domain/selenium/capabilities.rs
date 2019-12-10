@@ -42,7 +42,7 @@ impl fmt::Display for DesiredCapabilities {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(
       f,
-      "[{}],[{}] [{}]",
+      "[{}] [{}] [{}]",
       self
         .browser_name
         .to_owned()
