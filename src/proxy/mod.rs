@@ -29,14 +29,14 @@ pub fn forward(req: &HttpRequest<AppState>) -> Box<dyn Future<Item = HttpRespons
 
   let mut client_request = inspect_and_stream(&req, &mut client_builder).unwrap();
 
-  let is_new_session = inspector::is_a_new_session(req.uri().path());
 
-  let request = req.body();
+ println!("la requete client et user : {:?}",client_request);
+
   
-  if is_new_session{
 
+  // println!("le uri de la requete est : {:?}",request);
 
-  }
+  
 
 
 

@@ -1,11 +1,10 @@
 use crate::domain::selenium::{Capabilities, Command, SessionStatus};
 use crate::domain::AppState;
-use crate::bdd::redis;
 use actix_web::HttpRequest;
 use bytes::Bytes;
 
-
 /// Inspect the given chunk from a request's payload.
+///
 /// This function retrieve the method and the path from the request
 /// to know which event to match.
 pub fn inspect(req: &HttpRequest<AppState>, chunk: Bytes) -> Bytes {
@@ -28,7 +27,6 @@ pub fn inspect(req: &HttpRequest<AppState>, chunk: Bytes) -> Bytes {
 
 /// Capture new sessions and log
 fn capture_create_event(chunk: &str) {
-
     let caps = Capabilities::deserialize(chunk).unwrap_or_else(|_| {
         error!(
             "Fail to deserialize the capabilities for the given chunk : {}",
@@ -39,8 +37,6 @@ fn capture_create_event(chunk: &str) {
 
     let desired_caps = caps.desired_capabilities;
 
-    let user = desired_caps.get_soda_user();
-
     // user IP/ID | session status | Platform | Browser | Soda_User
     info!(
         "[{}] [{}] [{}] [{}]",
@@ -49,27 +45,6 @@ fn capture_create_event(chunk: &str) {
         desired_caps.get_browser_name(),
         desired_caps.get_soda_user(),
     );
-}
-
-
-/// Capture asked urls from test sessions and log
-fn capture_url_event(chunk: &str, path: String) {
-    if path.contains("/url") {
-        // deserialize the command from the request's body
-        // or return a new command with an empty url
-        let command = Command::deserialize(chunk).unwrap_or_else(|_| Command::new());
-
-        let session_id = session_id_of_path(&path).unwrap_or_else(|| "".to_string());
-        // user IP/ID | session_status | session ID | url_command | url
-        info!(
-            "[{}] [{}] [{}] [{}]",
-            SessionStatus::RunCommand,
-            session_id,
-            "url",
-            command.url()
-        );
-
-    }
 }
 
 /// Capture session deletions and log
@@ -82,6 +57,26 @@ fn capture_delete_event(path: String) {
         SessionStatus::Deleting,
         session_id
     );
+}
+
+/// Capture asked urls from test sessions and log
+fn capture_url_event(chunk: &str, path: String) {
+    if path.contains("/url") {
+        // deserialize the command from the request's body
+        // or return a new command with an empty url
+        let command = Command::deserialize(chunk).unwrap_or_else(|_| Command::new());
+
+        let session_id = session_id_of_path(&path).unwrap_or_else(|| "".to_string());
+
+        // user IP/ID | session_status | session ID | url_command | url
+        info!(
+            "[{}] [{}] [{}] [{}]",
+            SessionStatus::RunCommand,
+            session_id,
+            "url",
+            command.url()
+        );
+    }
 }
 
 /// Split the path to determine if it's a new session
@@ -100,7 +95,7 @@ pub fn is_a_new_session(path: &str) -> bool {
 
 /// Split the given path and try to retrieve the
 /// session's id.
-pub fn session_id_of_path(path: &str) -> Option<String> {
+fn session_id_of_path(path: &str) -> Option<String> {
     // Try to get the session's id part
     // e.g. possible patterns :
     // /wd/hub/session

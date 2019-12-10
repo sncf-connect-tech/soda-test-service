@@ -13,7 +13,7 @@ pub struct Capabilities {
 pub struct DesiredCapabilities {
   browser_name: Option<String>,
   platform: Option<String>,
-  #[serde(rename(deserialize = "soda:user"))] // respect of snacke case (soda:user in json file)
+  #[serde(rename(deserialize = "soda:user"))]
   soda_user: Option<String>,
 }
 
