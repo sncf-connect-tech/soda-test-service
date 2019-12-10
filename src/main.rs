@@ -32,10 +32,9 @@ fn main() {
   // Configure addresses to listen and forward.
   let listen = matches.value_of("listen").unwrap();
   let forwarded = matches.value_of("forward").unwrap();
-  
+
   //used to give a more verbose output. (all info logs or your )
-  let verbose = matches.occurrences_of("verbose");
-  
+
   // Configure the timeout for the proxy, default to 60s
   let timeout = value_t!(matches, "timeout", u32).unwrap_or(60);
 
@@ -61,12 +60,9 @@ fn main() {
       auth_pwd.clone(),
       timeout,
     );
-        
-    let mut app = App::with_state(state);
 
-    if verbose > 0 {
-      app = app.middleware(Logger::default());
-    }
+    let mut app = App::with_state(state);
+    app = app.middleware(Logger::default());
 
     app.resource("/healthcheck", |r| {
       r.method(Method::GET).f(|_| HttpResponse::Ok())

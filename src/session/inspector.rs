@@ -64,6 +64,8 @@ fn capture_url_event(chunk: &str, path: String) {
     if path.contains("/url") {
         // deserialize the command from the request's body
         // or return a new command with an empty url
+
+
         let command = Command::deserialize(chunk).unwrap_or_else(|_| Command::new());
 
         let session_id = session_id_of_path(&path).unwrap_or_else(|| "".to_string());
