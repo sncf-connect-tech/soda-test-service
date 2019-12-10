@@ -48,7 +48,7 @@ impl fmt::Display for DesiredCapabilities {
         .to_owned()
         .unwrap_or_else(|| "".to_string()),
       self.platform.to_owned().unwrap_or_else(|| "".to_string()),
-      self.soda_user.to_owned().unwrap_or_else(|| "".to_string())
+      self.soda_user.to_owned().unwrap_or_else(|| "anonymous".to_string())
     )
   }
 }
