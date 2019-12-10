@@ -10,11 +10,9 @@ use bytes::Bytes;
 pub fn inspect(req: &HttpRequest<AppState>, chunk: Bytes) -> Bytes {
     let method = req.method().to_string();
     let path = req.uri().to_string();
-    let auth_user = req.state().auth_user.clone();
     
     // bytes to string for deserialization
     let chunk_str = std::str::from_utf8(&chunk).unwrap_or(&"").to_owned();
-
     if method == "DELETE" {
         capture_delete_event(path);
     } else if method == "POST" && is_a_new_session(&path) {

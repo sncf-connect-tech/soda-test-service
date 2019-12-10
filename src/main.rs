@@ -33,7 +33,7 @@ fn main() {
   let listen = matches.value_of("listen").unwrap();
   let forwarded = matches.value_of("forward").unwrap();
   
-  //used to give a more verbose output. (all info logs)
+  // Used to give a more verbose output. (all info logs)
   let verbose = matches.occurrences_of("verbose");
   
   // Configure the timeout for the proxy, default to 60s
