@@ -26,6 +26,15 @@ pub fn init<'a>() -> ArgMatches<'a> {
         .required(true),
     )
     .arg(
+      Arg::with_name("verbose")
+        .short("-v")
+        .long("verbose")
+        .multiple(true)
+        .help("Make the server more talkative")
+        .takes_value(false)
+        .required(false),
+    )
+    .arg(
       Arg::with_name("timeout")
         .long("timeout")
         .help("format : DURATION_IN_SECS")
