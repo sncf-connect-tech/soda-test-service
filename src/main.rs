@@ -4,11 +4,13 @@ extern crate serde_derive;
 extern crate log;
 #[macro_use]
 extern crate clap;
-
 use env_logger;
 use hyper::service::{make_service_fn, service_fn};
-use hyper::{Error as HyperError, Server};
-use std::net::{SocketAddr, ToSocketAddrs};
+use hyper::{Body, Method, Request, Response};
+use hyper::{Error, Server};
+use reqwest::Client as HttpClient;
+use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
+use std::time::Duration;
 use url::Url;
 mod cli;
 mod domain;
@@ -31,27 +33,33 @@ async fn main() {
   // Configure the timeout for the proxy, default to 60s
   let timeout = value_t!(matches, "timeout", u32).unwrap_or(60);
 
-  // Verify and build the forward URL.
-  let forward_url = Url::parse(&format!(
-    "http://{}",
-    forwarded.to_socket_addrs().unwrap().next().unwrap()
-  ))
-  .unwrap();
-
-  let in_addr = ([127, 0, 0, 1], 8080).into();
+  let in_addr = listen.to_socket_addrs().unwrap().next().unwrap();
 
   let make_svc = make_service_fn(|_conn| {
     async {
       // This is the `Service` that will handle the connection.
       // `service_fn` is a helper to convert a function that
       // returns a Response into a `Service`.
-      Ok::<_, HyperError>(service_fn(proxy::proxy))
+      Ok::<_, Error>(service_fn(|req: Request<Body>| {
+        async move {
+          // Build a http client with reqwest
+          let client = HttpClient::builder()
+            .timeout(Duration::from_secs(timeout.into()))
+            .build()
+            .expect("Can't create the http client.");
+
+          proxy::proxy(req, client).await
+        }
+      }))
     }
   });
 
   let server = Server::bind(&in_addr).serve(make_svc);
 
-  info!("Listening on http://{}", in_addr);
+  info!(
+    "Server will listen on {} and forward to {}",
+    listen, forwarded
+  );
 
   if let Err(e) = server.await {
     error!("server error: {}", e);

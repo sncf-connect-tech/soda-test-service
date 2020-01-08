@@ -26,3 +26,5 @@ url = "^2.1.0"
 serde = "^1.0.104"
 log = "^0.4.3"
 env_logger = "^0.7.0"
+thread_io = "0.2.0"
+

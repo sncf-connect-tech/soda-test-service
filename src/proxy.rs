@@ -2,8 +2,10 @@ use crate::inspector;
 use bytes::Bytes;
 use hyper::{Body, Method, Request, Response};
 use reqwest::Client as HttpClient;
-use std::net::SocketAddr;
+use std::net::{SocketAddr, ToSocketAddrs};
 use url::Url;
+
+use crate::cli;
 
 #[derive(Debug)]
 pub struct RequestToInspect<'m, 'b> {
@@ -14,8 +16,11 @@ pub struct RequestToInspect<'m, 'b> {
 
 /// Proxy a Selenium request (from a Selenium client) to the hub.
 /// This function also inspect the content in order to write some logs / insights.
-pub async fn proxy(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
-    let out_addr: SocketAddr = ([127, 0, 0, 1], 4444).into();
+pub async fn proxy(req: Request<Body>, client: HttpClient) -> Result<Response<Body>, hyper::Error> {
+    let matches = cli::init();
+    let forwarded = matches.value_of("forward").unwrap();
+    let forward_url = forwarded.to_socket_addrs().unwrap().next().unwrap();
+    let out_addr: SocketAddr = forward_url;
     let method = req.method().to_owned();
     let path = &req
         .uri() // http://localhost:8080 -> on laisse
@@ -31,9 +36,6 @@ pub async fn proxy(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
         .map_err(|err| error!("err : {}", err))
         .unwrap();
     info!("Url : {}", url);
-
-    // Build a http client with reqwest
-    let client = HttpClient::new();
 
     let body_bytes = hyper::body::to_bytes(req).await?;
 
