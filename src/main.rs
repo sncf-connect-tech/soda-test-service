@@ -17,6 +17,10 @@ mod domain;
 mod inspector;
 mod proxy;
 
+pub struct Client<'t> {
+  pub timeout: &'t u32,
+}
+
 #[tokio::main]
 async fn main() {
   std::env::set_var("RUST_LOG", "info");
@@ -26,6 +30,7 @@ async fn main() {
   // Configure addresses to listen and forward.
   let listen = matches.value_of("listen").unwrap();
   let forwarded = matches.value_of("forward").unwrap();
+  let in_addr = listen.to_socket_addrs().unwrap().next().unwrap();
 
   // Used to give a more verbose output. (all info logs)
   let verbose = matches.occurrences_of("verbose");
@@ -33,14 +38,9 @@ async fn main() {
   // Configure the timeout for the proxy, default to 60s
   let timeout = value_t!(matches, "timeout", u32).unwrap_or(60);
 
-  let in_addr = listen.to_socket_addrs().unwrap().next().unwrap();
-
-  let make_svc = make_service_fn(|_conn| {
-    async {
-      // This is the `Service` that will handle the connection.
-      // `service_fn` is a helper to convert a function that
-      // returns a Response into a `Service`.
-      Ok::<_, Error>(service_fn(|req: Request<Body>| {
+  let make_svc = make_service_fn(move |_| {
+    async move {
+      Ok::<_, Error>(service_fn(move |req: Request<Body>| {
         async move {
           // Build a http client with reqwest
           let client = HttpClient::builder()
