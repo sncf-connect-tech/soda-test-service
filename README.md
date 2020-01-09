@@ -1,5 +1,7 @@
 # SODA - Test Service [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](http://makeapullrequest.com) [![Build Status](https://travis-ci.org/voyages-sncf-technologies/soda-test-service.svg?branch=master)](https://travis-ci.org/voyages-sncf-technologies/soda-test-service) [![crates.io](https://meritbadge.herokuapp.com/soda-test-service)](https://crates.io/crates/soda-test-service) [![Join the chat at https://gitter.im/voyages-sncf-technologies/soda-test-service](https://badges.gitter.im/voyages-sncf-technologies/soda-test-service.svg)](https://gitter.im/voyages-sncf-technologies/soda-test-service?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
+> Plase note that the API will strongly evolve until the stable version in 1.0.0. Do not use if you're looking for a stable software.
+
 The test service is a microservice belonging to the project Selenium On Demand Acronym. It acts like a reverse proxy in front of your Selenium hub. The test service is useful to :
 
 - Identify users with a Basic-Auth
