@@ -34,7 +34,7 @@ async fn capture_delete_event(path: String) {
     );
 }
 
-/// Capture new sessions and log
+/// Capture new sessions events
 async fn capture_create_event(body: &Bytes) {
     let capabilities: domain::Capabilities = serde_json::from_slice(body)
         .map_err(|_| {
@@ -56,7 +56,7 @@ async fn capture_create_event(body: &Bytes) {
     );
 }
 
-/// Capture asked urls from test sessions and log
+/// Capture asked url events
 fn capture_url_event(path: String, body: &Bytes) {
     if path.contains("/url") {
         let command: domain::Command = serde_json::from_slice(body)

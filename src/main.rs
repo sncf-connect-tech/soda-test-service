@@ -4,6 +4,7 @@ extern crate serde_derive;
 extern crate log;
 #[macro_use]
 extern crate clap;
+
 use env_logger;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Method, Request, Response};
@@ -12,14 +13,11 @@ use reqwest::Client as HttpClient;
 use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
 use std::time::Duration;
 use url::Url;
+
 mod cli;
 mod domain;
 mod inspector;
 mod proxy;
-
-pub struct Client<'t> {
-  pub timeout: &'t u32,
-}
 
 #[tokio::main]
 async fn main() {
@@ -31,7 +29,7 @@ async fn main() {
   let listen = matches.value_of("listen").unwrap();
   let forwarded = matches.value_of("forward").unwrap();
   let in_addr = listen.to_socket_addrs().unwrap().next().unwrap();
-
+  let forward_str = forwarded.to_socket_addrs().unwrap().next().unwrap();
   // Used to give a more verbose output. (all info logs)
   let verbose = matches.occurrences_of("verbose");
 
@@ -42,13 +40,15 @@ async fn main() {
     async move {
       Ok::<_, Error>(service_fn(move |req: Request<Body>| {
         async move {
-          // Build a http client with reqwest
-          let client = HttpClient::builder()
-            .timeout(Duration::from_secs(timeout.into()))
-            .build()
-            .expect("Can't create the http client.");
+          let myclient: domain::AppState = domain::AppState {
+            client: HttpClient::builder()
+              .timeout(Duration::from_secs(timeout.into()))
+              .build()
+              .expect("Can't create the http client."),
+            forward: forward_str.to_string(),
+          };
 
-          proxy::proxy(req, client).await
+          proxy::proxy(req, myclient).await
         }
       }))
     }
