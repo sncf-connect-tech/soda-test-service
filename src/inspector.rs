@@ -2,9 +2,9 @@ use bytes::Bytes;
 use hyper::Method;
 
 use crate::domain;
-use crate::proxy;
+use crate::reverse_proxy;
 
-pub async fn inspect<'m, 'b>(request: proxy::RequestToInspect<'m, 'b>) {
+pub async fn inspect<'m, 'b>(request: reverse_proxy::RequestToInspect<'m, 'b>) {
     let method = request.method.to_owned();
     let path = request.path;
 
@@ -27,7 +27,7 @@ async fn capture_delete_event(path: String) {
     // user IP/ID | session status | session ID
     info!(
         "[{}] [{}]",
-        domain::session::SessionStatus::DELETING,
+        domain::session::SessionStatus::Deleting,
         session_id
     );
 }
@@ -49,7 +49,7 @@ async fn capture_create_event(body: &Bytes) {
 
     info!(
         "[{}] {:?}",
-        domain::session::SessionStatus::CREATING,
+        domain::session::SessionStatus::Creating,
         desired_caps,
     );
 }
@@ -71,7 +71,7 @@ fn capture_url_event(path: String, body: &Bytes) {
         // user IP/ID | session_status | session ID | url_command | url
         info!(
             "[{}] [{}] [{}]",
-            domain::session::SessionStatus::COMMAND,
+            domain::session::SessionStatus::UrlCommand,
             session_id,
             command.url()
         );

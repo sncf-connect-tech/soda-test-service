@@ -16,7 +16,12 @@ use std::time::Duration;
 mod cli;
 mod domain;
 mod inspector;
-mod proxy;
+mod reverse_proxy;
+
+pub struct AppState {
+  pub client: HttpClient,
+  pub forward_uri: String,
+}
 
 #[tokio::main]
 async fn main() {
@@ -39,15 +44,15 @@ async fn main() {
     async move {
       Ok::<_, Error>(service_fn(move |req: Request<Body>| {
         async move {
-          let state: domain::AppState = domain::AppState {
+          let state = AppState {
             client: HttpClient::builder()
               .timeout(Duration::from_secs(timeout.into()))
               .build()
               .expect("Can't create the http client."),
-            forward: forward_str.to_string(),
+            forward_uri: forward_str.to_string(),
           };
 
-          proxy::proxy(req, state).await
+          reverse_proxy::forward(req, state).await
         }
       }))
     }

@@ -1,10 +1,10 @@
-use crate::inspector;
 use bytes::Bytes;
 use hyper::{Body, Method, Request, Response};
 use std::net::{SocketAddr, ToSocketAddrs};
 use url::Url;
 
-use crate::domain;
+use crate::inspector;
+use crate::AppState;
 
 #[derive(Debug)]
 pub struct RequestToInspect<'m, 'b> {
@@ -15,16 +15,13 @@ pub struct RequestToInspect<'m, 'b> {
 
 /// Proxy a Selenium request (from a Selenium client) to the hub.
 /// This function also inspect the content in order to write some logs / insights.
-pub async fn proxy(
-    req: Request<Body>,
-    state: domain::AppState,
-) -> Result<Response<Body>, hyper::Error> {
-    let forward_url = state.forward;
+pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Body>, hyper::Error> {
+    let forward_url = state.forward_uri;
     let out_addr: SocketAddr = forward_url.to_socket_addrs().unwrap().next().unwrap();
     let method = req.method().to_owned();
     let path = &req
-        .uri() // http://localhost:8080 -> on laisse
-        .path_and_query() // on récupère juste /session?param1...
+        .uri()
+        .path_and_query()
         .map(|x| x.to_string())
         .unwrap_or_else(|| "".to_string());
 
@@ -69,13 +66,6 @@ pub async fn proxy(
         .await
         .map_err(|err| error!("err for response body unwrap : {}", err))
         .unwrap();
-
-    // if !response_body.is_empty() {
-    //     let json_res: serde_json::Value = serde_json::from_slice(&response_body)
-    //         .map_err(|err| error!("err for response body to json : {}", err))
-    //         .unwrap();
-    //     info!("json response : {}", json_res);
-    // }
 
     // Return the response (from the hub) to the Selenium client.
     Ok(Response::new(Body::from(response_body)))
