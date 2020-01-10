@@ -7,12 +7,11 @@ extern crate clap;
 
 use env_logger;
 use hyper::service::{make_service_fn, service_fn};
-use hyper::{Body, Method, Request, Response};
+use hyper::{Body, Request};
 use hyper::{Error, Server};
 use reqwest::Client as HttpClient;
-use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
+use std::net::ToSocketAddrs;
 use std::time::Duration;
-use url::Url;
 
 mod cli;
 mod domain;
@@ -40,7 +39,7 @@ async fn main() {
     async move {
       Ok::<_, Error>(service_fn(move |req: Request<Body>| {
         async move {
-          let myclient: domain::AppState = domain::AppState {
+          let state: domain::AppState = domain::AppState {
             client: HttpClient::builder()
               .timeout(Duration::from_secs(timeout.into()))
               .build()
@@ -48,7 +47,7 @@ async fn main() {
             forward: forward_str.to_string(),
           };
 
-          proxy::proxy(req, myclient).await
+          proxy::proxy(req, state).await
         }
       }))
     }

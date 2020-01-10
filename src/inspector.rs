@@ -13,10 +13,8 @@ pub async fn inspect<'m, 'b>(request: proxy::RequestToInspect<'m, 'b>) {
     let body = request.body;
 
     if method == Method::DELETE {
-        info!("{}", domain::session::SessionStatus::DELETING);
         capture_delete_event(path).await;
     } else if method == Method::POST && is_a_new_session(&path) {
-        info!("{}", domain::session::SessionStatus::CREATING);
         capture_create_event(body).await;
     } else if method == "POST" && !is_a_new_session(&path) {
         capture_url_event(path, body);
@@ -29,7 +27,7 @@ async fn capture_delete_event(path: String) {
     // user IP/ID | session status | session ID
     info!(
         "[{}] [{}]",
-        domain::session::SessionStatus::DELETED,
+        domain::session::SessionStatus::DELETING,
         session_id
     );
 }
@@ -51,7 +49,7 @@ async fn capture_create_event(body: &Bytes) {
 
     info!(
         "[{}] {:?}",
-        domain::session::SessionStatus::CREATED,
+        domain::session::SessionStatus::CREATING,
         desired_caps,
     );
 }
@@ -72,10 +70,9 @@ fn capture_url_event(path: String, body: &Bytes) {
 
         // user IP/ID | session_status | session ID | url_command | url
         info!(
-            "[{}] [{}] [{}] [{}]",
+            "[{}] [{}] [{}]",
             domain::session::SessionStatus::COMMAND,
             session_id,
-            "url",
             command.url()
         );
     }

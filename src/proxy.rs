@@ -17,9 +17,9 @@ pub struct RequestToInspect<'m, 'b> {
 /// This function also inspect the content in order to write some logs / insights.
 pub async fn proxy(
     req: Request<Body>,
-    client: domain::AppState,
+    state: domain::AppState,
 ) -> Result<Response<Body>, hyper::Error> {
-    let forward_url = client.forward;
+    let forward_url = state.forward;
     let out_addr: SocketAddr = forward_url.to_socket_addrs().unwrap().next().unwrap();
     let method = req.method().to_owned();
     let path = &req
@@ -35,7 +35,6 @@ pub async fn proxy(
     let url = Url::parse(&uri_string)
         .map_err(|err| error!("err : {}", err))
         .unwrap();
-    info!("Url : {}", url);
 
     let body_bytes = hyper::body::to_bytes(req).await?;
 
@@ -53,7 +52,7 @@ pub async fn proxy(
     // Example : POST /session
     // the path is /session, the method is POST and the data is the request body (bytes).
     // Then we send the the request to the hub and we retrieve the response asynchronously.
-    let response = client
+    let response = state
         .client
         .request(method, url) // POST http://127.0.0.1:4444/session
         .body(body_bytes)
