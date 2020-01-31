@@ -7,10 +7,10 @@ pub struct Capabilities {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DesiredCapabilities {
-    browser_name: Option<String>,
-    platform: Option<String>,
+    pub browser_name: Option<String>,
+    pub platform: Option<String>,
     #[serde(rename(deserialize = "soda:user"))]
-    soda_user: Option<String>,
+    pub soda_user: Option<String>,
 }
 
 impl DesiredCapabilities {

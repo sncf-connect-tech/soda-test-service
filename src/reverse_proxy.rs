@@ -16,6 +16,7 @@ pub struct RequestToInspect<'m, 'b> {
 /// Proxy a Selenium request (from a Selenium client) to the hub.
 /// This function also inspect the content in order to write some logs / insights.
 pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Body>, hyper::Error> {
+    println!("la request est : {:?}", req);
     let forward_url = state.forward_uri;
     let out_addr: SocketAddr = forward_url.to_socket_addrs().unwrap().next().unwrap();
     let method = req.method().to_owned();
