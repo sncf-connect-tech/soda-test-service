@@ -39,7 +39,6 @@ pub async fn inspect<'m, 'b>(request: reverse_proxy::RequestToInspect<'m, 'b>) {
     if method == Method::DELETE {
         info!("{}", capture_delete_event(path).await);
     } else if method == Method::POST && is_a_new_session(&path) {
-        println!("voici le path pour la new session : {} ", path);
         info!("{}", capture_create_event(body).await);
     } else if method == "POST" && !is_a_new_session(&path) {
         if let Some(url_event) = capture_url_event(path, body) {
@@ -120,6 +119,7 @@ fn is_a_new_session(path: &str) -> bool {
 /// Split the given path and try to retrieve the
 /// session id.
 fn session_id_of_path(path: String) -> Option<String> {
+    // we need to verify if the path is to good format
     if !path.contains("wd/hub/session") {
         // warning!("");
         return None;
@@ -147,7 +147,6 @@ fn session_id_of_path(path: String) -> Option<String> {
     // /:id/:cmd
     if !tail.is_empty() {
         let remainder: Vec<&str> = tail[0].split('/').filter(|s| !s.is_empty()).collect();
-        println!("the remainder : {:?}", remainder);
         return Some(remainder[0].to_string());
     }
 
@@ -244,47 +243,52 @@ mod tests {
         };
 
         assert_eq!(desired_caps_result, expected_desired_caps);
-
-        // let expected = format!(
-        //     "[{}] [{:?}]",
-        //     domain::session::SessionStatus::Creating,
-        //     desired,
-        // );
-        // assert_eq!(desired_caps, expected);
     }
-    // #[tokio::test]
-    // async fn capture_create_event_return_an_error_when_fail_to_deserialize_the_capabilities() {
-    //     let mock_post_http_request_body = r#"
-    //     {
-    //         "capabilities":{
-    //             "desiredCapabilities":{
-    //                 "soda:user":"",
-    //                 "browserName":"",
-    //                 "testLocal":"false",
-    //                 "acceptSslCerts":true,
-    //                 "platform":""
-    //             },
-    //             "requiredCapabilities":{
+    #[tokio::test]
+    async fn capture_create_event_return_an_empty_capabilitie_when_fail_to_deserialize_the_capabilities(
+    ) {
+        let mock_post_http_request_body = r#"
+        {
+            "capabilities":{
+                "desiredCapabilities":{
+                    "soda:user":"",
+                    "browserName":"",
+                    "testLocal":"false",
+                    "acceptSslCerts":true,
+                    "platform":""
+                },
+                "requiredCapabilities":{
 
-    //             }
-    //         },
-    //         "desiredCapabilities":{
-    //             "soda:user":"",
-    //             "browserName":"",
-    //             "testLocal":"false",
-    //             "acceptSslCerts":true,
-    //             "platform":""
-    //         },
-    //         "requiredCapabilities":{
+                }
+            },
+            "desiredCapabilities":{
+                "soda:user":"",
+                "browserName":"",
+                "testLocal":"false",
+                "acceptSslCerts":true,
+                "platform":""
+            },
+            "requiredCapabilities":{
 
-    //         }
-    //     }"#;
+            }
+        }"#;
 
-    //     let body = Bytes::from(mock_post_http_request_body);
-    //     let desired_caps_result = capture_create_event(&body).await;
+        let body = Bytes::from(mock_post_http_request_body);
+        let desired_caps_result = capture_create_event(&body).await;
 
-    //     assert_eq!(desired_caps_result);
-    // }
+        let desired: domain::DesiredCapabilities = domain::DesiredCapabilities {
+            browser_name: Some("".to_string()),
+            platform: Some("".to_string()),
+            soda_user: Some("".to_string()),
+        };
+
+        let expected_desired_caps = CreateEvent {
+            event: domain::SessionStatus::Creating,
+            desired_capabilities: desired,
+        };
+
+        assert_eq!(desired_caps_result, expected_desired_caps);
+    }
     #[tokio::test]
     async fn capture_delete_event_should_return_an_empty_session_id_when_there_is_an_unexpected_path(
     ) {

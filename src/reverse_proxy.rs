@@ -70,13 +70,3 @@ pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Bod
     // Return the response (from the hub) to the Selenium client.
     Ok(Response::new(Body::from(response_body)))
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-
-//     #[tokio::test]
-//     async fn forward_a_good_response() {
-//         let mock_post_http_request =
-//     }
-// }
