@@ -1,5 +1,6 @@
 use std::fmt;
 
+#[derive(Debug, PartialEq)]
 pub enum SessionStatus {
     Creating,
     UrlCommand,

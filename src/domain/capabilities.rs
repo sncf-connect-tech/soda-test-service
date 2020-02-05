@@ -1,16 +1,17 @@
+use std::fmt;
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Capabilities {
     pub desired_capabilities: DesiredCapabilities,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct DesiredCapabilities {
-    browser_name: Option<String>,
-    platform: Option<String>,
+    pub browser_name: Option<String>,
+    pub platform: Option<String>,
     #[serde(rename(deserialize = "soda:user"))]
-    soda_user: Option<String>,
+    pub soda_user: Option<String>,
 }
 
 impl DesiredCapabilities {
@@ -20,6 +21,19 @@ impl DesiredCapabilities {
             platform: None,
             soda_user: None,
         }
+    }
+}
+
+impl fmt::Display for DesiredCapabilities {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // Use `self.number` to refer to each positional data point.
+        write!(
+            f,
+            "(browser: {}, platform: {}, user: {})",
+            self.browser_name.clone().unwrap_or_else(|| "".to_string()),
+            self.platform.clone().unwrap_or_else(|| "".to_string()),
+            self.soda_user.clone().unwrap_or_else(|| "".to_string())
+        )
     }
 }
 
