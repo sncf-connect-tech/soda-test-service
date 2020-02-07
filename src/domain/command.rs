@@ -1,4 +1,4 @@
-#[derive(Debug, Default, Deserialize)]
+#[derive(Default, Deserialize)]
 pub struct Command {
     pub url: Option<String>,
 }

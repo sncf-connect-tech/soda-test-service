@@ -1,11 +1,11 @@
 use std::fmt;
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Capabilities {
     pub desired_capabilities: DesiredCapabilities,
 }
 
-#[derive(Debug, Deserialize, Clone, PartialEq)]
+#[derive(Deserialize, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct DesiredCapabilities {
     pub browser_name: Option<String>,
@@ -26,7 +26,6 @@ impl DesiredCapabilities {
 
 impl fmt::Display for DesiredCapabilities {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // Use `self.number` to refer to each positional data point.
         write!(
             f,
             "(browser: {}, platform: {}, user: {})",

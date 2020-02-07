@@ -6,7 +6,6 @@ use url::Url;
 use crate::inspector;
 use crate::AppState;
 
-#[derive(Debug)]
 pub struct RequestToInspect<'m, 'b> {
     pub method: &'m Method,
     pub path: String,
@@ -51,7 +50,7 @@ pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Bod
     // Then we send the the request to the hub and we retrieve the response asynchronously.
     let response = state
         .client
-        .request(method, url) // POST http://127.0.0.1:4444/session
+        .request(method, url)
         .body(body_bytes)
         .send()
         .await

@@ -74,6 +74,20 @@ docker-compose up -d hub chrome firefox
 ./soda-test-service.exe --listen=localhost:8080 --forward=localhost:4444 --timeout=300
 ```
 
+## Tests
+```bash
+cargo tests
+```
+
+You can also get the code coverage with [Tarpaulin](https://crates.io/crates/cargo-tarpaulin) :
+
+```bash
+cargo install cargo-tarpaulin && cargo tarpaulin
+
+# You can also generate the html report
+cargo tarpaulin -o Html --output-dir ./report
+```
+
 # License
 
 This project is licensed under either of
