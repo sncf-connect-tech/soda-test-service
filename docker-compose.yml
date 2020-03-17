@@ -1,29 +1,29 @@
 version: "2"
 services:
   chrome:
-    image: selenium/node-chrome:3.3
+    image: selenium/node-chrome:3.141.59-zirconium
     shm_size: 500m
     depends_on:
       - hub
     environment:
-      - HUB_PORT_4444_TCP_ADDR=hub
-      - HUB_PORT_4444_TCP_PORT=4444
+      HUB_PORT_4444_TCP_ADDR: hub
+      HUB_PORT_4444_TCP_PORT: 4444
     networks:
       - local-network
 
   firefox:
-    image: selenium/node-firefox:2.53.1
+    image: selenium/node-firefox:3.141.59-zirconium
     shm_size: 500m
     depends_on:
       - hub
     environment:
-      - HUB_PORT_4444_TCP_ADDR=hub
-      - HUB_PORT_4444_TCP_PORT=4444
+      HUB_PORT_4444_TCP_ADDR: hub
+      HUB_PORT_4444_TCP_PORT: 4444
     networks:
       - local-network
 
   hub:
-    image: selenium/hub:3.6.0
+    image: selenium/hub:3.141.59-zirconium
     environment:
       GRID_MAX_SESSION: 15
       GRID_TIMEOUT: 60
@@ -34,15 +34,15 @@ services:
       - local-network
 
   test-service:
-    image: soda/test-service:0.2.0
+    image: soda/test-service:0.3.0
     ports:
       - "8080:8080"
     environment:
-      - HUB_PORT_4444_TCP_ADDR=hub
-      - HUB_PORT_4444_TCP_PORT=4444  
-      - AUTH_USER=""
-      - AUTH_PASSWORD=""
-      - HUB_CLIENT_TIMEOUT=300
+      HUB_PORT_4444_TCP_ADDR: hub
+      HUB_PORT_4444_TCP_PORT: 4444
+      AUTH_USER: ""
+      AUTH_PASSWORD: ""
+      HUB_CLIENT_TIMEOUT: 300
     networks:
       - local-network
 
