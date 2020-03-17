@@ -198,14 +198,14 @@ mod tests {
         let desired: domain::DesiredCapabilities = domain::DesiredCapabilities {
             browser_name: Some("chrome".to_string()),
             platform: Some("LINUX".to_string()),
-            soda_user: Some("Tappas".to_string()),
+            soda_user: Some("user123".to_string()),
         };
 
         let mock_post_http_request_body = r#"
         {
             "capabilities":{
                 "desiredCapabilities":{
-                    "soda:user":"Tappas",
+                    "soda:user":"user123",
                     "browserName":"chrome",
                     "testLocal":"false",
                     "acceptSslCerts":true,
@@ -216,7 +216,7 @@ mod tests {
                 }
             },
             "desiredCapabilities":{
-                "soda:user":"Tappas",
+                "soda:user":"user123",
                 "browserName":"chrome",
                 "testLocal":"false",
                 "acceptSslCerts":true,
