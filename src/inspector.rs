@@ -25,13 +25,13 @@ struct DeleteEvent {
 
 impl fmt::Display for CommandEvent {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "[{}],[{}],[{}]", self.event, self.session_id, self.url)
+        write!(f, "[{}] [{}] [{}]", self.event, self.session_id, self.url)
     }
 }
 
 impl fmt::Display for CreateEvent {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "[{}],[{}]", self.event, self.desired_capabilities)
+        write!(f, "[{}] {}", self.event, self.desired_capabilities)
     }
 }
 
@@ -44,8 +44,6 @@ impl fmt::Display for DeleteEvent {
 pub async fn inspect<'m, 'b>(request: reverse_proxy::RequestToInspect<'m, 'b>) {
     let method = request.method.to_owned();
     let path = request.path;
-
-    info!("Inspecting the request {} {}", method, path);
 
     let body = request.body;
 

@@ -31,7 +31,9 @@ impl fmt::Display for DesiredCapabilities {
             "(browser: {}, platform: {}, user: {})",
             self.browser_name.clone().unwrap_or_else(|| "".to_string()),
             self.platform.clone().unwrap_or_else(|| "".to_string()),
-            self.soda_user.clone().unwrap_or_else(|| "".to_string())
+            self.soda_user
+                .clone()
+                .unwrap_or_else(|| "GUEST".to_string())
         )
     }
 }

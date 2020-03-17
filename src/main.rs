@@ -40,22 +40,18 @@ async fn main() {
     // Configure the timeout for the proxy, default to 60s
     let timeout = value_t!(matches, "timeout", u32).unwrap_or(60);
 
-    let make_svc = make_service_fn(move |_| {
-        async move {
-            Ok::<_, Error>(service_fn(move |req: Request<Body>| {
-                async move {
-                    let state = AppState {
-                        client: HttpClient::builder()
-                            .timeout(Duration::from_secs(timeout.into()))
-                            .build()
-                            .expect("Can't create the http client."),
-                        forward_uri: forward_str.to_string(),
-                    };
+    let make_svc = make_service_fn(move |_| async move {
+        Ok::<_, Error>(service_fn(move |req: Request<Body>| async move {
+            let state = AppState {
+                client: HttpClient::builder()
+                    .timeout(Duration::from_secs(timeout.into()))
+                    .build()
+                    .expect("Can't create the http client."),
+                forward_uri: forward_str.to_string(),
+            };
 
-                    reverse_proxy::forward(req, state).await
-                }
-            }))
-        }
+            reverse_proxy::forward(req, state).await
+        }))
     });
 
     let server = Server::bind(&in_addr).serve(make_svc);
