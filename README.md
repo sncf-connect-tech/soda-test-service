@@ -2,7 +2,6 @@
 
 The test service is a microservice belonging to the project Selenium On Demand Acronym. It acts like a reverse proxy in front of your Selenium hub. The test service is useful to :
 
-- Identify users with a Basic-Auth
 - Get some insights on test sessions (teams, browers, os)
 - Correlate test session failures to specific OS / browers
 - Follow the test sessions in realtime
@@ -22,25 +21,22 @@ These instructions will get you a minimal Selenium Grid with :
 
 ### By using our [docker-compose.yml](docker-compose.yml)
 
-- `AUTH_USER=user AUTH_PWD=pwd docker-compose up -d`
-- [http://user:pwd@localhost:8080](http://user:pwd@localhost:8080)
+- `docker-compose up -d`
+- [http://localhost:8080](http://localhost:8080)
 
 ### By adding the test service to your docker compose
 
 Copy the following snippet to add the test service in your docker-compose file and customize it as you want. It's fully compatible with the official repositories of [SeleniumHQ/docker-selenium](https://github.com/SeleniumHQ/docker-selenium).
 
-Note that you need to replace the values of `AUTH_USER` and `AUTH_PWD` by your owns :
 
 ```
 test-service:
-  image: soda/test-service:latest
+  image: soda/test-service:0.3.0
   ports:
     - "8080:8080"
   environment:
     - HUB_PORT_4444_TCP_ADDR=hub
     - HUB_PORT_4444_TCP_PORT=4444
-    - AUTH_USER=my_user
-    - AUTH_PWD=my_user_pwd
   networks:
     - your-selenium-network
 ```
@@ -52,7 +48,7 @@ Then run your services with the following docker-compose command :
 docker-compose up -d
 ```
 
-Finally use the Selenium hub through the test-service : `http://<AUTH_USER>:<AUTH_PWD>@localhost:8080`
+Finally access the Selenium hub through the test-service : `http://localhost:8080`
 
 # Development
 

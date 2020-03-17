@@ -40,8 +40,6 @@ services:
     environment:
       HUB_PORT_4444_TCP_ADDR: hub
       HUB_PORT_4444_TCP_PORT: 4444
-      AUTH_USER: ""
-      AUTH_PASSWORD: ""
       HUB_CLIENT_TIMEOUT: 300
     networks:
       - local-network
