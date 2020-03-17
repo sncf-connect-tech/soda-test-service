@@ -1,6 +1,6 @@
-#[derive(Debug, Default, Deserialize)]
+#[derive(Default, Deserialize)]
 pub struct Command {
-    url: Option<String>,
+    pub url: Option<String>,
 }
 
 impl Command {
