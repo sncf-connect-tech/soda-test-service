@@ -1,6 +1,9 @@
-os:
-  - linux
 language: rust
+dist: bionic
+addons:
+  apt:
+    packages:
+      - libssl-dev
 cache: cargo
 
 # Run the script on stable, beta and nightly channels
@@ -14,9 +17,12 @@ matrix:
     - rust: nightly
   fast_finish: true
 
-before_script:
-  - rustup component add clippy
-  - cargo install --force cargo-audit
+before_script: |
+  rustup component add clippy
+  cargo install --force cargo-audit
+  if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
+    cargo install cargo-tarpaulin
+  fi
 
 script:
   # see https://rustsec.org/
@@ -25,3 +31,9 @@ script:
   - cargo clippy -- -D warnings
   # run tests
   - cargo test
+
+after_success: |
+  if [[ "$TRAVIS_RUST_VERSION" == stable ]]; then
+    cargo tarpaulin --out Xml
+    bash <(curl -s https://codecov.io/bash)
+  fi
