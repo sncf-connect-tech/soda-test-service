@@ -76,7 +76,7 @@ docker-compose up -d hub chrome firefox
 
 ## Tests
 ```bash
-cargo tests
+cargo test
 ```
 
 You can also get the code coverage with [Tarpaulin](https://crates.io/crates/cargo-tarpaulin) :
