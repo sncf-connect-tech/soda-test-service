@@ -1,4 +1,7 @@
 # Changelog
+## [0.3.0] - IN PROGRESS
+### Added
+- Add status code and headers in responses
 
 ## [0.1.0] - 2019-01-24
 ### Added
