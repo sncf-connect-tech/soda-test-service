@@ -1,10 +1,11 @@
+use std::net::{SocketAddr, ToSocketAddrs};
+
 use bytes::Bytes;
 use hyper::{Body, Method, Request, Response};
-use std::net::{SocketAddr, ToSocketAddrs};
 use url::Url;
 
-use crate::inspector;
 use crate::AppState;
+use crate::inspector;
 
 pub struct RequestToInspect<'m, 'b> {
     pub method: &'m Method,
@@ -57,6 +58,17 @@ pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Bod
         .map_err(|err| error!("err  for response unwrap : {}", err))
         .unwrap();
 
+    // Rebuild the response by adding the parsed body
+    let mut response_builder = Response::builder()
+        .status(response.status());
+
+    // We copy the headers from the hub response to the client response.
+    let headers = response_builder.headers_mut().unwrap();
+
+    for (key, value) in response.headers() {
+        headers.insert(key, value.to_owned());
+    }
+
     // We retrieve the response body as bytes which is useful if we need
     // to deserialize the data. For example if we need to retrieve the
     // session id once a session is created on the hub.
@@ -67,5 +79,5 @@ pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Bod
         .unwrap();
 
     // Return the response (from the hub) to the Selenium client.
-    Ok(Response::new(Body::from(response_body)))
+    Ok(response_builder.body(Body::from(response_body)).unwrap())
 }
