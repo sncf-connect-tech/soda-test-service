@@ -1,6 +1,6 @@
 # Inspired by https://whitfin.io/speeding-up-rust-docker-builds/
 # Step 1 : build the optimized binary
-FROM rust:1.37-slim as build
+FROM rust:1.46.0 as build
 
 # create a new empty shell project
 RUN USER=root cargo new --bin soda-test-service
@@ -22,12 +22,19 @@ COPY ./src ./src
 RUN rm ./target/release/deps/soda_test_service*
 RUN cargo build --release
 
-# Step 2 : run the application in a slim container
+# Step 2 :# run the application in a slim container
 # without cargo, the toolchain, ...
-FROM debian:jessie-slim
+FROM ubuntu:latest
 
 COPY --from=build /soda-test-service/target/release/soda-test-service .
 EXPOSE 8080
+
+RUN apt-get update
+ENV TZ=Europe/Paris
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+RUN apt-get install -y pkg-config libssl-dev
+
+ENV LD_LIBRARY_PATH=/usr/local/lib
 
 # This command run the test service which listen on the specified address:port
 # and forward http requests to the specified address:port.
