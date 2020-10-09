@@ -1,9 +1,8 @@
 use std::net::{SocketAddr, ToSocketAddrs};
 
 use bytes::Bytes;
-use futures::executor::block_on;
 use hyper::{Body, Method, Request, Response};
-use retry::{delay::Fixed, retry_with_index, OperationResult};
+use reqwest::Client;
 use url::Url;
 
 use crate::inspector;
@@ -21,7 +20,6 @@ pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Bod
     let forward_url = state.forward_uri;
     let out_addr: SocketAddr = forward_url.to_socket_addrs().unwrap().next().unwrap();
     let method = req.method().to_owned();
-    let client = state.client;
     let path = &req
         .uri()
         .path_and_query()
@@ -42,33 +40,24 @@ pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Bod
 
     inspector::inspect(request_to_inspect).await;
 
-    // Recreate a request based on the client http request.
-    // We use the body, the method and the url provided from the client.
-    // Example : POST /session
-    // the path is /session, the method is POST and the data is the request body (bytes).
-    // Then we send the the request to the hub and we retrieve the response asynchronously.
-    let result = retry_with_index(Fixed::from_millis(100), |current_try| {
-        // todo : handle error
-        let url = Url::parse(&uri_string)
-            .map_err(|err| error!("err : {}", err))
-            .unwrap();
-            
-        let response_result = block_on(client.request(method.to_owned(), url).send())
-            .map_err(|err| error!("err for response unwrap : {}", err));
+    let url = Url::parse(&uri_string)
+        .map_err(|err| error!("err : {}", err))
+        .unwrap();
 
-        match response_result {
-            Ok(response) => OperationResult::Ok(response),
-            Err(err) => {
-                if current_try < 3 {
-                    OperationResult::Retry(err.to_owned())
-                } else {
-                    OperationResult::Err(err.to_owned())
-                }
+    // Custom dirty retry because it's impossible to make a retry with an async function inside, sorry
+    let response = match send_request(state.client.to_owned(), method.to_owned(), url.to_owned())
+        .await
+    {
+        Ok(result) => result,
+        Err(_) => {
+            match send_request(state.client.to_owned(), method.to_owned(), url.to_owned()).await {
+                Ok(result) => result,
+                Err(_) => send_request(state.client.to_owned(), method.to_owned(), url.to_owned())
+                    .await
+                    .unwrap(),
             }
         }
-    });
-
-    let response = result.unwrap();
+    };
 
     // Rebuild the response by adding the parsed body
     let mut response_builder = hyper::Response::builder().status(response.status());
@@ -91,4 +80,21 @@ pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Bod
 
     // Return the response (from the hub) to the Selenium client.
     Ok(response_builder.body(Body::from(response_body)).unwrap())
+}
+
+// Recreate a request based on the client http request.
+// We use the body, the method and the url provided from the client.
+// Example : POST /session
+// the path is /session, the method is POST and the data is the request body (bytes).
+// Then we send the the request to the hub and we retrieve the response asynchronously.
+pub async fn send_request(
+    client: Client,
+    method: Method,
+    url: Url,
+) -> Result<reqwest::Response, ()> {
+    client
+        .request(method.to_owned(), url.to_owned())
+        .send()
+        .await
+        .map_err(|err| error!("First try in error for response unwrap : {}", err))
 }
