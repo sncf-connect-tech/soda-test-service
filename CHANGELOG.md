@@ -1,7 +1,8 @@
 # Changelog
-## [0.3.0] - IN PROGRESS
+## [0.3.0] - 2020-10-12
 ### Added
 - Add status code and headers in responses
+- Add retry in the reverse proxy forward method
 
 ## [0.1.0] - 2019-01-24
 ### Added

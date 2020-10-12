@@ -34,13 +34,13 @@ services:
       - local-network
 
   test-service:
-    image: soda/test-service:0.2.0
+    image: soda/test-service:0.3.0
     ports:
       - "8080:8080"
     environment:
       HUB_PORT_4444_TCP_ADDR: hub
       HUB_PORT_4444_TCP_PORT: 4444
-      HUB_CLIENT_TIMEOUT: 300
+      HUB_CLIENT_TIMEOUT: 60
     networks:
       - local-network
 
