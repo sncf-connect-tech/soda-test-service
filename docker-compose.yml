@@ -34,7 +34,7 @@ services:
       - local-network
 
   test-service:
-    image: soda/test-service:0.3.0-SNAPSHOT
+    image: soda/test-service:0.3.0
     ports:
       - "8080:8080"
     environment:

@@ -30,6 +30,10 @@ pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Bod
 
     let uri_string = format!("http://{}{}", out_addr, path);
 
+    let url = Url::parse(&uri_string)
+        .map_err(|err| error!("err : {}", err))
+        .unwrap();
+
     let body_bytes = hyper::body::to_bytes(req).await?;
 
     let request_to_inspect = RequestToInspect {
@@ -39,10 +43,6 @@ pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Bod
     };
 
     inspector::inspect(request_to_inspect).await;
-
-    let url = Url::parse(&uri_string)
-        .map_err(|err| error!("err : {}", err))
-        .unwrap();
 
     // Custom dirty retry because it's impossible to make a retry with an async function inside, sorry
     // TODO make it better
