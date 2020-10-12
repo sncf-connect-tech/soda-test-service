@@ -45,16 +45,34 @@ pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Bod
         .unwrap();
 
     // Custom dirty retry because it's impossible to make a retry with an async function inside, sorry
-    let response = match send_request(state.client.to_owned(), method.to_owned(), url.to_owned())
-        .await
+    // TODO make it better
+    let response = match send_request(
+        state.client.to_owned(),
+        method.to_owned(),
+        url.to_owned(),
+        body_bytes.to_owned(),
+    )
+    .await
     {
         Ok(result) => result,
         Err(_) => {
-            match send_request(state.client.to_owned(), method.to_owned(), url.to_owned()).await {
+            match send_request(
+                state.client.to_owned(),
+                method.to_owned(),
+                url.to_owned(),
+                body_bytes.to_owned(),
+            )
+            .await
+            {
                 Ok(result) => result,
-                Err(_) => send_request(state.client.to_owned(), method.to_owned(), url.to_owned())
-                    .await
-                    .unwrap(),
+                Err(_) => send_request(
+                    state.client.to_owned(),
+                    method.to_owned(),
+                    url.to_owned(),
+                    body_bytes.to_owned(),
+                )
+                .await
+                .unwrap(),
             }
         }
     };
@@ -91,9 +109,11 @@ pub async fn send_request(
     client: Client,
     method: Method,
     url: Url,
+    body_bytes: Bytes,
 ) -> Result<reqwest::Response, ()> {
     client
         .request(method.to_owned(), url.to_owned())
+        .body(body_bytes)
         .send()
         .await
         .map_err(|err| error!("First try in error for response unwrap : {}", err))
