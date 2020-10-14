@@ -42,20 +42,25 @@ impl fmt::Display for DeleteEvent {
 }
 
 pub async fn inspect<'m, 'b>(request: reverse_proxy::RequestToInspect<'m, 'b>) {
+    let id = request.id;
     let method = request.method.to_owned();
     let path = request.path;
 
     let body = request.body;
 
     if method == Method::DELETE {
-        info!("{}", capture_delete_event(path).await);
-    } else if method == Method::POST && is_a_new_session(&path) {
-        info!("{}", capture_create_event(body).await);
+        info!("Request Id : {:?}, {}", id, capture_delete_event(path).await);
+    } else if is_a_new_create_session(method.to_owned(), &path) {
+        info!("Request Id : {:?}, {}", id, capture_create_event(body).await);
     } else if method == "POST" && !is_a_new_session(&path) {
         if let Some(url_event) = capture_url_event(path, body) {
-            info!("{}", url_event);
+            info!("Request Id : {:?}, {}", id, url_event);
         }
     }
+}
+
+pub fn is_a_new_create_session(method: Method, path: &str) -> bool {
+  method == Method::POST && is_a_new_session(&path)
 }
 
 async fn capture_delete_event(path: String) -> DeleteEvent {

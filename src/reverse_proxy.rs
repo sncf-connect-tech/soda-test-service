@@ -1,14 +1,14 @@
-use std::net::{SocketAddr, ToSocketAddrs};
-
+use crate::inspector;
 use bytes::Bytes;
 use hyper::{Body, Method, Request, Response};
-use reqwest::Client;
+use retry::{delay::Fixed, retry_with_index, OperationResult};
+use std::net::{SocketAddr, ToSocketAddrs};
+use std::time::Duration;
 use url::Url;
-
-use crate::inspector;
-use crate::AppState;
+use uuid::Uuid;
 
 pub struct RequestToInspect<'m, 'b> {
+    pub id: Uuid,
     pub method: &'m Method,
     pub path: String,
     pub body: &'b Bytes,
@@ -16,8 +16,13 @@ pub struct RequestToInspect<'m, 'b> {
 
 /// Proxy a Selenium request (from a Selenium client) to the hub.
 /// This function also inspect the content in order to write some logs / insights.
-pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Body>, hyper::Error> {
-    let forward_url = state.forward_uri;
+pub async fn forward(
+    req: Request<Body>,
+    state: SocketAddr,
+    timeout: u32,
+) -> Result<Response<Body>, hyper::Error> {
+    let request_id = Uuid::new_v4();
+    let forward_url = state.to_string();
     let out_addr: SocketAddr = forward_url.to_socket_addrs().unwrap().next().unwrap();
     let method = req.method().to_owned();
     let path = &req
@@ -26,7 +31,7 @@ pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Bod
         .map(|x| x.to_string())
         .unwrap_or_else(|| "".to_string());
 
-    info!("{} {}", method, path);
+    info!("{:?} {} {}", request_id, method, path);
 
     let uri_string = format!("http://{}{}", out_addr, path);
 
@@ -37,6 +42,7 @@ pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Bod
     let body_bytes = hyper::body::to_bytes(req).await?;
 
     let request_to_inspect = RequestToInspect {
+        id: request_id,
         path: String::from(path),
         method: &method,
         body: &body_bytes,
@@ -44,38 +50,52 @@ pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Bod
 
     inspector::inspect(request_to_inspect).await;
 
-    // Custom dirty retry because it's impossible to make a retry with an async function inside, sorry
-    // TODO make it better
-    let response = match send_request(
-        state.client.to_owned(),
-        method.to_owned(),
-        url.to_owned(),
-        body_bytes.to_owned(),
-    )
-    .await
-    {
-        Ok(result) => result,
-        Err(_) => {
-            match send_request(
-                state.client.to_owned(),
-                method.to_owned(),
-                url.to_owned(),
-                body_bytes.to_owned(),
-            )
-            .await
-            {
-                Ok(result) => result,
-                Err(_) => send_request(
-                    state.client.to_owned(),
-                    method.to_owned(),
-                    url.to_owned(),
-                    body_bytes.to_owned(),
+    let is_a_new_create_session = inspector::is_a_new_create_session(method.to_owned(), &path);
+
+    // If the request to forward is a create session, we remove the timeout be cause the request is not finished
+    // while it's in the grid queue
+    let client = match is_a_new_create_session {
+        true => reqwest::blocking::Client::builder()
+            .build()
+            .expect("Can't create the http client."),
+        false => reqwest::blocking::Client::builder()
+            .timeout(Duration::from_secs(timeout.into()))
+            .build()
+            .expect("Can't create the http client."),
+    };
+
+    // Recreate a request based on the client http request.
+    // We use the body, the method and the url provided from the client.
+    // Example : POST /session
+    // the path is /session, the method is POST and the data is the request body (bytes).
+    // Then we send the the request to the hub and we retrieve the response asynchronously.
+    // We retry many times in case a request is lost and timed out
+    let response = retry_with_index(Fixed::from_millis(100), |current_try| {
+        let result = client
+            .request(method.to_owned(), url.to_owned())
+            .body(body_bytes.to_vec())
+            .send()
+            .map_err(|err| {
+                format!(
+                    "Request Id : {:?} Try number {} in error for response unwrap : {}",
+                    request_id, current_try, err
                 )
-                .await
-                .unwrap(),
+            });
+
+        match result {
+            Ok(response) => OperationResult::Ok(response),
+            Err(err) => {
+                // If the request is a create session, we don't retry because it can
+                // cause multiple session created
+                if current_try > 3 || is_a_new_create_session {
+                    OperationResult::Err(err)
+                } else {
+                    OperationResult::Retry(err)
+                }
             }
         }
-    };
+    })
+    .unwrap();
 
     // Rebuild the response by adding the parsed body
     let mut response_builder = hyper::Response::builder().status(response.status());
@@ -92,29 +112,9 @@ pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Bod
     // session id once a session is created on the hub.
     let response_body = response
         .bytes()
-        .await
         .map_err(|err| error!("err for response body unwrap : {}", err))
         .unwrap();
 
     // Return the response (from the hub) to the Selenium client.
     Ok(response_builder.body(Body::from(response_body)).unwrap())
-}
-
-// Recreate a request based on the client http request.
-// We use the body, the method and the url provided from the client.
-// Example : POST /session
-// the path is /session, the method is POST and the data is the request body (bytes).
-// Then we send the the request to the hub and we retrieve the response asynchronously.
-pub async fn send_request(
-    client: Client,
-    method: Method,
-    url: Url,
-    body_bytes: Bytes,
-) -> Result<reqwest::Response, ()> {
-    client
-        .request(method.to_owned(), url.to_owned())
-        .body(body_bytes)
-        .send()
-        .await
-        .map_err(|err| error!("First try in error for response unwrap : {}", err))
 }

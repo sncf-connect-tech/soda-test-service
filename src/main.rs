@@ -10,7 +10,7 @@ use hyper::{Body, Request};
 use hyper::{Error, Server};
 use reqwest::Client as HttpClient;
 use std::net::ToSocketAddrs;
-use std::time::Duration;
+
 
 mod cli;
 mod domain;
@@ -41,15 +41,7 @@ async fn main() {
 
     let make_svc = make_service_fn(move |_| async move {
         Ok::<_, Error>(service_fn(move |req: Request<Body>| async move {
-            let state = AppState {
-                client: HttpClient::builder()
-                    .timeout(Duration::from_secs(timeout.into()))
-                    .build()
-                    .expect("Can't create the http client."),
-                forward_uri: forward_str.to_string(),
-            };
-
-            reverse_proxy::forward(req, state).await
+            reverse_proxy::forward(req, forward_str, timeout).await
         }))
     });
 
