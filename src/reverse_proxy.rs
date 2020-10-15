@@ -64,43 +64,18 @@ pub async fn forward(
             .expect("Can't create the http client."),
     };
 
-    // Custom dirty retry because it's impossible to make a retry with an async function inside, sorry
-    // TODO make it better when retry will accept async functions or by removing reqwest crate
-    let response_result = send_request(
+    // Send the request with a retry if the request is not a create session
+    // If the last try is an error, the current thread panics
+    let response = send_request(
         client.to_owned(),
         method.to_owned(),
         request_id.to_owned(),
         url.to_owned(),
         body_bytes.to_owned(),
-        1,
+        is_a_new_create_session,
     )
-    .await;
-    let response = if response_result.is_ok() || is_a_new_create_session {
-        response_result.unwrap()
-    } else {
-        match send_request(
-            client.to_owned(),
-            method.to_owned(),
-            request_id.to_owned(),
-            url.to_owned(),
-            body_bytes.to_owned(),
-            2,
-        )
-        .await
-        {
-            Ok(result) => result,
-            Err(_) => send_request(
-                client.to_owned(),
-                method.to_owned(),
-                request_id.to_owned(),
-                url.to_owned(),
-                body_bytes.to_owned(),
-                3,
-            )
-            .await
-            .unwrap(),
-        }
-    };
+    .await
+    .unwrap();
 
     // Rebuild the response by adding the parsed body
     let mut response_builder = hyper::Response::builder().status(response.status());
@@ -136,17 +111,27 @@ pub async fn send_request(
     request_id: Uuid,
     url: Url,
     body_bytes: Bytes,
-    current_try: i32,
+    is_a_new_create_session: bool
 ) -> Result<reqwest::Response, String> {
-    client
-        .request(method.to_owned(), url.to_owned())
-        .body(body_bytes)
-        .send()
-        .await
-        .map_err(|err| {
-            format!(
-                "Request Id : {:?} Try number {} in error for response unwrap : {}",
-                request_id, current_try, err
-            )
-        })
+    let mut tries: usize = 1;
+    loop {
+        let res = client
+            .request(method.to_owned(), url.to_owned())
+            .body(body_bytes.to_vec())
+            .send()
+            .await
+            .map_err(|err| {
+                format!(
+                    "Request Id : {:?} Try number {} in error for response unwrap : {}",
+                    request_id, tries, err
+                )
+            });
+        match res {
+            Err(e) if tries <= 3 && !is_a_new_create_session => {
+                tries += 1;
+                log::error!("{}", e);
+            }
+            res => return res,
+        }
+    }
 }
