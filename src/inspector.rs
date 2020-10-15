@@ -49,12 +49,12 @@ pub async fn inspect<'m, 'b>(request: reverse_proxy::RequestToInspect<'m, 'b>) {
     let body = request.body;
 
     if method == Method::DELETE {
-        info!("Request Id : {:?}, {}", id, capture_delete_event(path).await);
+        info!("{}, Request Id : {:?}", capture_delete_event(path).await, id);
     } else if is_a_new_create_session(method.to_owned(), &path) {
-        info!("Request Id : {:?}, {}", id, capture_create_event(body).await);
+        info!("{}, Request Id : {:?}", capture_create_event(body).await, id);
     } else if method == "POST" && !is_a_new_session(&path) {
         if let Some(url_event) = capture_url_event(path, body) {
-            info!("Request Id : {:?}, {}", id, url_event);
+            info!("{}, Request Id : {:?}", url_event, id);
         }
     }
 }

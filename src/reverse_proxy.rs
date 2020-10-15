@@ -1,7 +1,7 @@
 use crate::inspector;
 use bytes::Bytes;
 use hyper::{Body, Method, Request, Response};
-use retry::{delay::Fixed, retry_with_index, OperationResult};
+use reqwest::Client;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::time::Duration;
 use url::Url;
@@ -55,47 +55,52 @@ pub async fn forward(
     // If the request to forward is a create session, we remove the timeout be cause the request is not finished
     // while it's in the grid queue
     let client = match is_a_new_create_session {
-        true => reqwest::blocking::Client::builder()
+        true => Client::builder()
             .build()
             .expect("Can't create the http client."),
-        false => reqwest::blocking::Client::builder()
+        false => Client::builder()
             .timeout(Duration::from_secs(timeout.into()))
             .build()
             .expect("Can't create the http client."),
     };
 
-    // Recreate a request based on the client http request.
-    // We use the body, the method and the url provided from the client.
-    // Example : POST /session
-    // the path is /session, the method is POST and the data is the request body (bytes).
-    // Then we send the the request to the hub and we retrieve the response asynchronously.
-    // We retry many times in case a request is lost and timed out
-    let response = retry_with_index(Fixed::from_millis(100), |current_try| {
-        let result = client
-            .request(method.to_owned(), url.to_owned())
-            .body(body_bytes.to_vec())
-            .send()
-            .map_err(|err| {
-                format!(
-                    "Request Id : {:?} Try number {} in error for response unwrap : {}",
-                    request_id, current_try, err
-                )
-            });
-
-        match result {
-            Ok(response) => OperationResult::Ok(response),
-            Err(err) => {
-                // If the request is a create session, we don't retry because it can
-                // cause multiple session created
-                if current_try > 3 || is_a_new_create_session {
-                    OperationResult::Err(err)
-                } else {
-                    OperationResult::Retry(err)
-                }
-            }
+    // Custom dirty retry because it's impossible to make a retry with an async function inside, sorry
+    // TODO make it better when retry will accept async functions or by removing reqwest crate
+    let response_result = send_request(
+        client.to_owned(),
+        method.to_owned(),
+        request_id.to_owned(),
+        url.to_owned(),
+        body_bytes.to_owned(),
+        1,
+    )
+    .await;
+    let response = if response_result.is_ok() || is_a_new_create_session {
+        response_result.unwrap()
+    } else {
+        match send_request(
+            client.to_owned(),
+            method.to_owned(),
+            request_id.to_owned(),
+            url.to_owned(),
+            body_bytes.to_owned(),
+            2,
+        )
+        .await
+        {
+            Ok(result) => result,
+            Err(_) => send_request(
+                client.to_owned(),
+                method.to_owned(),
+                request_id.to_owned(),
+                url.to_owned(),
+                body_bytes.to_owned(),
+                3,
+            )
+            .await
+            .unwrap(),
         }
-    })
-    .unwrap();
+    };
 
     // Rebuild the response by adding the parsed body
     let mut response_builder = hyper::Response::builder().status(response.status());
@@ -112,9 +117,36 @@ pub async fn forward(
     // session id once a session is created on the hub.
     let response_body = response
         .bytes()
+        .await
         .map_err(|err| error!("err for response body unwrap : {}", err))
         .unwrap();
 
     // Return the response (from the hub) to the Selenium client.
     Ok(response_builder.body(Body::from(response_body)).unwrap())
+}
+
+// Recreate a request based on the client http request.
+// We use the body, the method and the url provided from the client.
+// Example : POST /session
+// the path is /session, the method is POST and the data is the request body (bytes).
+// Then we send the the request to the hub and we retrieve the response asynchronously.
+pub async fn send_request(
+    client: Client,
+    method: Method,
+    request_id: Uuid,
+    url: Url,
+    body_bytes: Bytes,
+    current_try: i32,
+) -> Result<reqwest::Response, String> {
+    client
+        .request(method.to_owned(), url.to_owned())
+        .body(body_bytes)
+        .send()
+        .await
+        .map_err(|err| {
+            format!(
+                "Request Id : {:?} Try number {} in error for response unwrap : {}",
+                request_id, current_try, err
+            )
+        })
 }
