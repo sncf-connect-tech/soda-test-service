@@ -41,26 +41,21 @@ impl fmt::Display for DeleteEvent {
     }
 }
 
-pub async fn inspect<'m, 'b>(request: reverse_proxy::RequestToInspect<'m, 'b>) {
-    let id = request.id;
+pub async fn inspect<'m, 'b>(request: &reverse_proxy::CapturedRequest<'m, 'b>) {
+    let id = request.id.to_owned();
     let method = request.method.to_owned();
-    let path = request.path;
-
-    let body = request.body;
+    let path = request.path.to_owned();
+    let body = request.body.to_owned();
 
     if method == Method::DELETE {
-        info!("{}, Request Id : {:?}", capture_delete_event(path).await, id);
-    } else if is_a_new_create_session(method.to_owned(), &path) {
-        info!("{}, Request Id : {:?}", capture_create_event(body).await, id);
+        info!("{}, Request Id : {}", capture_delete_event(path).await, id);
+    } else if method == Method::POST && is_a_new_session(&path) {
+        info!("{}, Request Id : {}", capture_create_event(&body).await, id);
     } else if method == "POST" && !is_a_new_session(&path) {
-        if let Some(url_event) = capture_url_event(path, body) {
-            info!("{}, Request Id : {:?}", url_event, id);
+        if let Some(url_event) = capture_url_event(path, &body) {
+            info!("{}, Request Id : {}", url_event, id);
         }
     }
-}
-
-pub fn is_a_new_create_session(method: Method, path: &str) -> bool {
-  method == Method::POST && is_a_new_session(&path)
 }
 
 async fn capture_delete_event(path: String) -> DeleteEvent {
@@ -120,7 +115,7 @@ fn capture_url_event(path: String, body: &Bytes) -> Option<CommandEvent> {
 /// an existing session (the path contains the session's id).
 /// If the head and the tail of the path are empty,
 /// it's a new session event that we want to capture.
-fn is_a_new_session(path: &str) -> bool {
+pub fn is_a_new_session(path: &str) -> bool {
     let splitted_path: Vec<&str> = path
         .split("/wd/hub/session")
         .filter(|item| !item.is_empty())

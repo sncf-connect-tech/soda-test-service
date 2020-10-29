@@ -7,8 +7,9 @@ use std::time::Duration;
 use url::Url;
 use uuid::Uuid;
 
-pub struct RequestToInspect<'m, 'b> {
+pub struct CapturedRequest<'m, 'b> {
     pub id: Uuid,
+    pub url: Url,
     pub method: &'m Method,
     pub path: String,
     pub body: &'b Bytes,
@@ -31,7 +32,7 @@ pub async fn forward(
         .map(|x| x.to_string())
         .unwrap_or_else(|| "".to_string());
 
-    info!("{:?} {} {}", request_id, method, path);
+    info!("{} {} {}", request_id, method, path);
 
     let uri_string = format!("http://{}{}", out_addr, path);
 
@@ -41,20 +42,21 @@ pub async fn forward(
 
     let body_bytes = hyper::body::to_bytes(req).await?;
 
-    let request_to_inspect = RequestToInspect {
+    let request_to_inspect = CapturedRequest {
         id: request_id,
         path: String::from(path),
+        url,
         method: &method,
         body: &body_bytes,
     };
 
-    inspector::inspect(request_to_inspect).await;
+    inspector::inspect(&request_to_inspect).await;
 
-    let is_a_new_create_session = inspector::is_a_new_create_session(method.to_owned(), &path);
+    let is_a_new_session = inspector::is_a_new_session(&path);
 
     // If the request to forward is a create session, we remove the timeout be cause the request is not finished
     // while it's in the grid queue
-    let client = match is_a_new_create_session {
+    let client = match is_a_new_session {
         true => Client::builder()
             .build()
             .expect("Can't create the http client."),
@@ -68,11 +70,8 @@ pub async fn forward(
     // If the last try is an error, the current thread panics
     let response = send_request(
         client.to_owned(),
-        method.to_owned(),
-        request_id.to_owned(),
-        url.to_owned(),
-        body_bytes.to_owned(),
-        is_a_new_create_session,
+        request_to_inspect,
+        is_a_new_session,
     )
     .await
     .unwrap();
@@ -96,6 +95,8 @@ pub async fn forward(
         .map_err(|err| error!("err for response body unwrap : {}", err))
         .unwrap();
 
+    info!("{} forward the following response : {:?}", request_id, response_body);
+
     // Return the response (from the hub) to the Selenium client.
     Ok(response_builder.body(Body::from(response_body)).unwrap())
 }
@@ -105,33 +106,38 @@ pub async fn forward(
 // Example : POST /session
 // the path is /session, the method is POST and the data is the request body (bytes).
 // Then we send the the request to the hub and we retrieve the response asynchronously.
-pub async fn send_request(
+pub async fn send_request<'m, 'b>(
     client: Client,
-    method: Method,
-    request_id: Uuid,
-    url: Url,
-    body_bytes: Bytes,
-    is_a_new_create_session: bool
+    request_to_inspect: CapturedRequest<'m, 'b>,
+    is_a_new_session: bool,
 ) -> Result<reqwest::Response, String> {
     let mut tries: usize = 1;
+    // We retry the request 3 times (excepted for the new session) in case there is a timeout.
     loop {
-        let res = client
-            .request(method.to_owned(), url.to_owned())
-            .body(body_bytes.to_vec())
+        let response = client
+            .request(
+                request_to_inspect.method.to_owned(),
+                request_to_inspect.url.to_owned(),
+            )
+            .body(request_to_inspect.body.to_vec())
             .send()
             .await
             .map_err(|err| {
                 format!(
-                    "Request Id : {:?} Try number {} in error for response unwrap : {}",
-                    request_id, tries, err
+                    "Request Id : {} Try number {} in error for response unwrap : {}",
+                    request_to_inspect.id, tries, err
                 )
             });
-        match res {
-            Err(e) if tries <= 3 && !is_a_new_create_session => {
+        info!(
+            "Request Id {} result : {:?}",
+            request_to_inspect.id, response
+        );
+        match response {
+            Err(e) if tries <= 3 && !is_a_new_session => {
                 tries += 1;
                 log::error!("{}", e);
             }
-            res => return res,
+            res => break res,
         }
     }
 }
