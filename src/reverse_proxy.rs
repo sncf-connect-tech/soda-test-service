@@ -76,7 +76,7 @@ pub async fn forward(
     .await
     .unwrap();
 
-    if !response.status().is_success() {
+    if response.status().is_server_error() {
       error!("Error for request ID {} : {:?}", request_id.to_string(), response);
     }
 
