@@ -76,6 +76,10 @@ pub async fn forward(
     .await
     .unwrap();
 
+    if !response.status().is_success() {
+      error!("Error for request ID {} : {:?}", request_id.to_string(), response);
+    }
+
     // Rebuild the response by adding the parsed body
     let mut response_builder = hyper::Response::builder().status(response.status());
 
@@ -94,8 +98,6 @@ pub async fn forward(
         .await
         .map_err(|err| error!("err for response body unwrap : {}", err))
         .unwrap();
-
-    info!("{} forward the following response : {:?}", request_id, response_body);
 
     // Return the response (from the hub) to the Selenium client.
     Ok(response_builder.body(Body::from(response_body)).unwrap())
@@ -128,10 +130,6 @@ pub async fn send_request<'m, 'b>(
                     request_to_inspect.id, tries, err
                 )
             });
-        info!(
-            "Request Id {} result : {:?}",
-            request_to_inspect.id, response
-        );
         match response {
             Err(e) if tries <= 3 && !is_a_new_session => {
                 tries += 1;
