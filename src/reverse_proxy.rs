@@ -1,14 +1,15 @@
-use std::net::{SocketAddr, ToSocketAddrs};
-
+use crate::inspector;
 use bytes::Bytes;
 use hyper::{Body, Method, Request, Response};
 use reqwest::Client;
+use std::net::{SocketAddr, ToSocketAddrs};
+use std::time::Duration;
 use url::Url;
+use uuid::Uuid;
 
-use crate::inspector;
-use crate::AppState;
-
-pub struct RequestToInspect<'m, 'b> {
+pub struct CapturedRequest<'m, 'b> {
+    pub id: Uuid,
+    pub url: Url,
     pub method: &'m Method,
     pub path: String,
     pub body: &'b Bytes,
@@ -16,8 +17,13 @@ pub struct RequestToInspect<'m, 'b> {
 
 /// Proxy a Selenium request (from a Selenium client) to the hub.
 /// This function also inspect the content in order to write some logs / insights.
-pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Body>, hyper::Error> {
-    let forward_url = state.forward_uri;
+pub async fn forward(
+    req: Request<Body>,
+    state: SocketAddr,
+    timeout: u32,
+) -> Result<Response<Body>, hyper::Error> {
+    let request_id = Uuid::new_v4();
+    let forward_url = state.to_string();
     let out_addr: SocketAddr = forward_url.to_socket_addrs().unwrap().next().unwrap();
     let method = req.method().to_owned();
     let path = &req
@@ -26,7 +32,7 @@ pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Bod
         .map(|x| x.to_string())
         .unwrap_or_else(|| "".to_string());
 
-    info!("{} {}", method, path);
+    info!("{} {} {}", request_id, method, path);
 
     let uri_string = format!("http://{}{}", out_addr, path);
 
@@ -36,46 +42,43 @@ pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Bod
 
     let body_bytes = hyper::body::to_bytes(req).await?;
 
-    let request_to_inspect = RequestToInspect {
+    let request_to_inspect = CapturedRequest {
+        id: request_id,
         path: String::from(path),
+        url,
         method: &method,
         body: &body_bytes,
     };
 
-    inspector::inspect(request_to_inspect).await;
+    inspector::inspect(&request_to_inspect).await;
 
-    // Custom dirty retry because it's impossible to make a retry with an async function inside, sorry
-    // TODO make it better
-    let response = match send_request(
-        state.client.to_owned(),
-        method.to_owned(),
-        url.to_owned(),
-        body_bytes.to_owned(),
+    let is_a_new_session = inspector::is_a_new_session(&path);
+
+    // If the request to forward is a create session, we remove the timeout be cause the request is not finished
+    // while it's in the grid queue
+    let client = match is_a_new_session {
+        true => Client::builder()
+            .build()
+            .expect("Can't create the http client."),
+        false => Client::builder()
+            .timeout(Duration::from_secs(timeout.into()))
+            .build()
+            .expect("Can't create the http client."),
+    };
+
+    // Send the request with a retry if the request is not a create session
+    // If the last try is an error, the current thread panics
+    let response = send_request(
+        client.to_owned(),
+        request_to_inspect,
+        is_a_new_session,
     )
     .await
-    {
-        Ok(result) => result,
-        Err(_) => {
-            match send_request(
-                state.client.to_owned(),
-                method.to_owned(),
-                url.to_owned(),
-                body_bytes.to_owned(),
-            )
-            .await
-            {
-                Ok(result) => result,
-                Err(_) => send_request(
-                    state.client.to_owned(),
-                    method.to_owned(),
-                    url.to_owned(),
-                    body_bytes.to_owned(),
-                )
-                .await
-                .unwrap(),
-            }
-        }
-    };
+    .unwrap();
+
+    if response.status().is_server_error() {
+      error!("Error for request ID {} : {:?}", request_id.to_string(), response);
+    }
 
     // Rebuild the response by adding the parsed body
     let mut response_builder = hyper::Response::builder().status(response.status());
@@ -105,16 +108,34 @@ pub async fn forward(req: Request<Body>, state: AppState) -> Result<Response<Bod
 // Example : POST /session
 // the path is /session, the method is POST and the data is the request body (bytes).
 // Then we send the the request to the hub and we retrieve the response asynchronously.
-pub async fn send_request(
+pub async fn send_request<'m, 'b>(
     client: Client,
-    method: Method,
-    url: Url,
-    body_bytes: Bytes,
-) -> Result<reqwest::Response, ()> {
-    client
-        .request(method.to_owned(), url.to_owned())
-        .body(body_bytes)
-        .send()
-        .await
-        .map_err(|err| error!("First try in error for response unwrap : {}", err))
+    request_to_inspect: CapturedRequest<'m, 'b>,
+    is_a_new_session: bool,
+) -> Result<reqwest::Response, String> {
+    let mut tries: usize = 1;
+    // We retry the request 3 times (excepted for the new session) in case there is a timeout.
+    loop {
+        let response = client
+            .request(
+                request_to_inspect.method.to_owned(),
+                request_to_inspect.url.to_owned(),
+            )
+            .body(request_to_inspect.body.to_vec())
+            .send()
+            .await
+            .map_err(|err| {
+                format!(
+                    "Request Id : {} Try number {} in error for response unwrap : {}",
+                    request_to_inspect.id, tries, err
+                )
+            });
+        match response {
+            Err(e) if tries <= 3 && !is_a_new_session => {
+                tries += 1;
+                log::error!("{}", e);
+            }
+            res => break res,
+        }
+    }
 }

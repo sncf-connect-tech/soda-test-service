@@ -33,7 +33,7 @@ Copy the following snippet to add the test service in your docker-compose file a
 
 ```
 test-service:
-  image: soda/test-service:0.3.0
+  image: soda/test-service:0.3.1
   ports:
     - "8080:8080"
   environment:

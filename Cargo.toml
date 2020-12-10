@@ -1,6 +1,6 @@
 [package]
 name = "soda-test-service"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Julian Didier <did.julian@gmail.com>"]
 license = "MIT/Apache-2.0"
 description = "SODA Test Service helps with tracking test sessions"
@@ -28,3 +28,4 @@ log = "^0.4.3"
 env_logger = "^0.7.0"
 thread_io = "0.2.0"
 retry = "1.1.0"
+uuid = { version = "0.8", features = ["v4"] }
